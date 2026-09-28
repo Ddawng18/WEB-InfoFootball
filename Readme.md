@@ -1,4 +1,4 @@
-**Thành viên:**
+**Thành viên**
 ===============
 Ddawng18: Nguyễn Huỳnh Đăng  
 banhthinh1975-crypto: Bành Phát Thịnh  
