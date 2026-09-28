@@ -8,7 +8,6 @@ Cơ sở dữ liệu được thiết kế theo mô hình quan hệ, trong đó 
 
 ### ERD
 
-![Database ERD](./docs/database-erd.png)
 
 ## Database Tables
 
