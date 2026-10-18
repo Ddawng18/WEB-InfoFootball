@@ -1,0 +1,27 @@
+# Không commit file cấu hình chứa key/secret và DB
+config.ini
+
+# Log, cache và file tạm
+*.log
+/tmp/
+/storage/
+
+# Hệ điều hành / IDE
+.DS_Store
+Thumbs.db
+
+# Backup CSDL
+*.sql.bak
+
+# Nội bộ / không push lên GitHub
+/kb/
+/docs/
+UI.md
+database/fastfootbalinfo*.sql
+public/images/teams/*.png
+public/uploads/news/*
+!public/uploads/news/.htaccess
+
+# IDE
+.idea/
+.vscode/
