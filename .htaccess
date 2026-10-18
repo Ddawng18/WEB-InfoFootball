@@ -1,0 +1,15 @@
+# Bảo vệ file cấu hình chứa key/secret (Apache)
+<Files "config.ini">
+    Require all denied
+</Files>
+<Files "config.example.ini">
+    Require all denied
+</Files>
+
+# Chặn truy cập trực tiếp mã nguồn và dữ liệu
+RedirectMatch 403 ^/.*/(app|database|sample|tools)/.*$
+
+# Tùy chọn: ẩn index.php trên URL (cần mod_rewrite)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+</IfModule>

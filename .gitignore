@@ -1,0 +1,13 @@
+# Không commit file cấu hình chứa key/secret và DB
+config.ini
+
+# Log và file tạm
+*.log
+/tmp/
+
+# Backup CSDL
+*.sql.bak
+
+# IDE
+.idea/
+.vscode/
