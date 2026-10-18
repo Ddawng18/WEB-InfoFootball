@@ -1,0 +1,27 @@
+{
+  "countries": [
+    { "ma": "VN", "ten": "Việt Nam" },
+    { "ma": "JP", "ten": "Nhật Bản" },
+    { "ma": "EN", "ten": "Anh" }
+  ],
+  "leagues": [
+    { "ma": "VL1", "ten": "V.League 1", "ma_quoc_gia": "VN", "mua_giai": "2026" },
+    { "ma": "J1", "ten": "J1 League", "ma_quoc_gia": "JP", "mua_giai": "2026" },
+    { "ma": "PL", "ten": "Premier League", "ma_quoc_gia": "EN", "mua_giai": "2026" }
+  ],
+  "teams": [
+    { "ma": "HNFC", "ten": "Hà Nội FC", "ma_quoc_gia": "VN" },
+    { "ma": "HAGL", "ten": "Hoàng Anh Gia Lai", "ma_quoc_gia": "VN" },
+    { "ma": "KAW", "ten": "Kawasaki Frontale", "ma_quoc_gia": "JP" },
+    { "ma": "URA", "ten": "Urawa Red Diamonds", "ma_quoc_gia": "JP" },
+    { "ma": "MCI", "ten": "Manchester City", "ma_quoc_gia": "EN" },
+    { "ma": "LIV", "ten": "Liverpool", "ma_quoc_gia": "EN" },
+    { "ma": "ARS", "ten": "Arsenal", "ma_quoc_gia": "EN" },
+    { "ma": "CHE", "ten": "Chelsea", "ma_quoc_gia": "EN" }
+  ],
+  "matches": [
+    { "ma": "M001", "ma_giai": "VL1", "ma_doi_nha": "HNFC", "ma_doi_khach": "HAGL", "thoi_gian_utc": "2026-10-12 10:00:00", "trang_thai": "DANG_DA", "phut": 60, "ti_so_nha": 2, "ti_so_khach": 0 },
+    { "ma": "M005", "ma_giai": "J1", "ma_doi_nha": "KAW", "ma_doi_khach": "URA", "thoi_gian_utc": "2026-10-12 11:00:00", "trang_thai": "NGHI_GIUA_HIEP", "phut": 45, "ti_so_nha": 0, "ti_so_khach": 0 },
+    { "ma": "M009", "ma_giai": "PL", "ma_doi_nha": "MCI", "ma_doi_khach": "LIV", "thoi_gian_utc": "2026-10-12 12:30:00", "trang_thai": "DANG_DA", "phut": 70, "ti_so_nha": 3, "ti_so_khach": 1 }
+  ]
+}
