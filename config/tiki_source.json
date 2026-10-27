@@ -1,0 +1,24 @@
+{
+  "sources": [
+    {
+      "key": "tiki",
+      "name": "TIKI",
+      "domain": "tiki.vn",
+      "enabled": true,
+      "max_pages": 10,
+      "api_search_url": "https://api.tiki.vn/v2/products?limit={limit}&q={query}&page={page}",
+      "api_category_url": "https://api.tiki.vn/v2/products?limit={limit}&category={category}&page={page}",
+      "category_ids": [24178, 67611, 6826, 2981],
+      "queries": [
+        "giày đá bóng",
+        "giày đá banh",
+        "áo đấu bóng đá",
+        "quần áo bóng đá",
+        "găng tay thủ môn",
+        "phụ kiện bóng đá",
+        "bóng đá futsal",
+        "bóng đá trẻ em"
+      ]
+    }
+  ]
+}
