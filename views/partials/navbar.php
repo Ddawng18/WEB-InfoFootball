@@ -1,6 +1,6 @@
 <?php
 /**
- * Header tối giản (tông màu cũ): thương hiệu + menu + tài khoản.
+ * Header chung: thương hiệu + menu + tài khoản.
  * Biến: $user (\App\Models\User|null)
  */
 $user = $user ?? null;
@@ -11,7 +11,8 @@ $active = static fn (string ...$names): string => in_array($current, $names, tru
     <div class="container">
         <div class="as-bar">
             <a class="as-brand" href="<?= h(route('home')) ?>">
-                <i class="bi bi-dribbble"></i> FastFoot<span class="dot">Ball</span>Info
+                <span class="as-brand-mark" aria-hidden="true"><i class="bi bi-shield-fill"></i><b>F</b></span>
+                <span>FastFoot<span class="dot">Ball</span>Info</span>
             </a>
 
             <nav class="as-nav">
