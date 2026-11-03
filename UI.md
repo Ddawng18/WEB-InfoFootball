@@ -18,12 +18,13 @@ Khai báo tại `public/style.css` (`:root`):
 
 | Token | Giá trị | Ý nghĩa |
 |-------|---------|---------|
-| `--as-ink` | `#0f1012` | Chữ chính / header tối |
-| `--as-bg` | `#f5f4f1` | Nền trang |
-| `--as-line` | `#e6e3dd` | Đường kẻ |
-| `--as-red` | `#e8322a` | Nhấn thương hiệu, trạng thái "đang đá", nút chính |
+| `--as-ink` | `#191719` | Chữ chính / header than đậm |
+| `--as-bg` | `#f5f3f0` | Nền trang sáng ấm |
+| `--as-line` | `#e5dfdc` | Đường kẻ |
+| `--as-red` | `#c8102e` | Nhấn đỏ thể thao, trạng thái "đang đá", nút chính |
+| `--as-gold` | `#d5b15b` | Nhấn vàng đồng dùng tiết chế |
 | `--as-green` / `--as-amber` | `#1f9d55` / `#d9a534` | Kết thúc / nghỉ giữa hiệp |
-| `--as-radius` | `14px` | Bo góc panel/hàng |
+| `--as-radius` | `12px` | Bo góc panel/hàng |
 
 Chữ giao diện dùng **Inter**. (Component cũ đọc biến `--ff-*`, đã alias sang `--as-*`.)
 
@@ -41,7 +42,7 @@ flowchart TB
 - Navbar: `views/partials/navbar.php` — header tối, brand + menu + tài khoản.
 - Footer: `views/partials/footer.php` — công bố nguồn dữ liệu + thời điểm đồng bộ.
 - Footer luôn ở đáy: `body.d-flex.flex-column.min-vh-100`, `main.flex-grow-1`.
-- **Trang chủ**: `home.php` dùng `.as-layout` = sidebar trái (giải đấu, **phân trang 15 giải/trang**) + cột phải (toolbar tab trạng thái + `.as-list` các hàng trận).
+- **Trang chủ**: `home.php` mở đầu bằng hero Match Centre dùng ảnh sân bóng Unsplash và ảnh cầu thủ trang trí, dải thống kê theo dữ liệu hiện tại; trong `.as-layout`, sidebar trái có ảnh giới thiệu bóng đá + giải đấu (**phân trang 15 giải/trang**) và cột phải có trận đấu tâm điểm lấy từ lịch/kết quả thật trước toolbar + `.as-list`.
 
 Biến truyền vào view: `$title` (tiêu đề tab) và `$user` (`\App\Models\User|null`) — navbar/footer đọc `$user`.
 
@@ -49,7 +50,7 @@ Biến truyền vào view: `$title` (tiêu đề tab) và `$user` (`\App\Models\
 
 | Thành phần | File | Mô tả |
 |------------|------|-------|
-| Navbar | `views/partials/navbar.php` | Brand, menu chính (ẩn "Đội yêu thích" khi chưa đăng nhập, "Quản trị" khi không phải ADMIN), dropdown người dùng |
+| Navbar | `views/partials/navbar.php` | Brand khiên chữ F, menu chính (ẩn "Đội yêu thích" khi chưa đăng nhập, "Quản trị" khi không phải ADMIN), dropdown người dùng |
 | Footer | `views/partials/footer.php` | Bản quyền, công bố nguồn (`API-Football`/`Live Score API`/`Dữ liệu mẫu`), thời điểm đồng bộ |
 | Hàng trận (bảng tỉ số) | `views/partials/match_row.php` | Hàng compact: giờ/phút, đội nhà (tên + logo), tỉ số, đội khách, chip trạng thái; nhóm theo giải bằng `.as-league-head` |
 | Thẻ trận (dùng ở trang đội) | `views/partials/match_card.php` | Giải + giờ, chip trạng thái, **crest logo đội thật**, tỉ số 2 đội, link chi tiết |
@@ -168,6 +169,7 @@ views/
 public/
   style.css   # tokens + component tùy biến
   app.js      # AJAX 30s, yêu thích, đồng bộ
+  images/     # ảnh sân bóng từ Unsplash và ảnh cầu thủ trang trí
 app/helpers.php   # h(), route(), api(), asset(), badge_trang_thai(), accent_trang_thai(), chu_cai_dau(), crest_html(), render_pager(), dong_bo_gan_nhat()
 ```
 

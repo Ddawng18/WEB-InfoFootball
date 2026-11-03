@@ -210,5 +210,56 @@
 })(jQuery);
 
 
+// Đồng hồ đếm ngược cho trận tâm điểm trên trang chủ.
+(function () {
+    'use strict';
+    var card = document.querySelector('[data-countdown-target]');
+    if (!card) { return; }
+    var target = Number(card.getAttribute('data-countdown-target')) * 1000;
+    function update() {
+        var seconds = Math.max(0, Math.floor((target - Date.now()) / 1000));
+        var units = {
+            days: Math.floor(seconds / 86400),
+            hours: Math.floor((seconds % 86400) / 3600),
+            minutes: Math.floor((seconds % 3600) / 60),
+            seconds: seconds % 60
+        };
+        Object.keys(units).forEach(function (key) {
+            var value = card.querySelector('[data-countdown="' + key + '"]');
+            if (value) { value.textContent = String(units[key]).padStart(2, '0'); }
+        });
+    }
+    update();
+    window.setInterval(update, 1000);
+
+    var reminder = card.querySelector('[data-match-reminder]');
+    if (reminder) {
+        reminder.addEventListener('click', function () {
+            var start = reminder.getAttribute('data-start');
+            var endDate = new Date(Date.parse(start.slice(0, 4) + '-' + start.slice(4, 6) + '-' + start.slice(6, 8) + 'T' + start.slice(9, 11) + ':' + start.slice(11, 13) + ':' + start.slice(13, 15) + 'Z') + 7200000);
+            var end = endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+            var ics = [
+                'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FastFootBallInfo//Match Centre//VI',
+                'BEGIN:VEVENT', 'UID:liverpool-manchester-united-20261122@fastfootballinfo',
+                'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''),
+                'DTSTART:' + start, 'DTEND:' + end,
+                'SUMMARY:Liverpool vs Manchester United', 'LOCATION:Anfield',
+                'DESCRIPTION:Premier League - FastFootBallInfo',
+                'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY',
+                'DESCRIPTION:Trận Liverpool vs Manchester United sẽ bắt đầu sau 30 phút.',
+                'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'
+            ].join('\r\n');
+            var blobUrl = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+            var download = document.createElement('a');
+            download.href = blobUrl;
+            download.download = 'liverpool-man-utd-reminder.ics';
+            document.body.appendChild(download);
+            download.click();
+            download.remove();
+            window.setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 1000);
+        });
+    }
+})();
+
 // aaa
 // bbbbbbv
