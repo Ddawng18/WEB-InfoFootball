@@ -158,7 +158,6 @@ $lastGiai = null;
                             <?php if ($spotlight['live'] && $featuredMatch->getPhut() > 0): ?> · <?= (int) $featuredMatch->getPhut() ?>'<?php endif; ?>
                         </span>
                     </div>
-                    <div class="ffbi-featured-match__league"><i class="bi bi-trophy" aria-hidden="true"></i> <?= h($spotlight['league']) ?></div>
                     <?php $kickoffLocal = new DateTime($spotlight['kickoff'], new DateTimeZone('UTC')); $kickoffLocal->setTimezone(new DateTimeZone(App\Core\Time::tz())); $weekday = [0 => 'CN', 1 => 'T2', 2 => 'T3', 3 => 'T4', 4 => 'T5', 5 => 'T6', 6 => 'T7'][(int) $kickoffLocal->format('w')]; ?>
                     <div class="ffbi-featured-match__layout">
                         <div class="ffbi-featured-match__teams">
@@ -167,6 +166,7 @@ $lastGiai = null;
                                 <strong><?= h($spotlight['home']) ?></strong>
                             </div>
                             <a class="ffbi-featured-match__score" href="<?= h($spotlight['href']) ?>" aria-label="Chi tiết trận <?= h($spotlight['home']) ?> và <?= h($spotlight['away']) ?>">
+                                <span class="ffbi-featured-match__competition"><i class="bi bi-trophy" aria-hidden="true"></i> <?= h($spotlight['league']) ?></span>
                                 <?php if ($spotlight['status'] === 'SAP_DIEN_RA'): ?>
                                     <span><?= h($kickoffLocal->format('H:i')) ?></span>
                                 <?php else: ?>
@@ -195,7 +195,7 @@ $lastGiai = null;
                             </div>
                         <?php endif; ?>
                     </div>
-                    <a class="ffbi-featured-match__link" href="<?= h($spotlight['href']) ?>"><?= h($spotlight['link_label']) ?> <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    <?php if ($spotlight['countdown'] === null): ?><a class="ffbi-featured-match__link" href="<?= h($spotlight['href']) ?>"><?= h($spotlight['link_label']) ?> <i class="bi bi-arrow-right" aria-hidden="true"></i></a><?php endif; ?>
                 </div>
             </article>
         <?php endif; ?>
