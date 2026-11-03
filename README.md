@@ -1,102 +1,102 @@
-# FastFootBalInfo
-
-Website thông tin bóng đá: lịch thi đấu, kết quả, chi tiết trận, giải đấu, đội bóng, bảng xếp hạng, tin tức, sản phẩm bóng đá và khu vực quản trị.
-
-Đồ án học phần **Phát triển ứng dụng Web** (UEH), xây dựng bằng **PHP 8 + MySQL/MariaDB**, giao diện **Bootstrap 5**, backend **OOP + MVC**, giao tiếp **AJAX/JSON**.
-
-> Nguyên tắc cốt lõi: nghiệp vụ SQL nằm trong routine CSDL. PHP chỉ gọi `CALL tên_routine(?, ...)` qua `Database::callProc()`; tên routine lấy từ `RoutineName`.
-
-## 1. Tính năng
-
-### Người dùng
-
-- Trang chủ: trận đang đá, sắp diễn ra, đã kết thúc; tự cập nhật bằng AJAX.
-- Lịch thi đấu, lọc theo ngày, giải, trạng thái; chi tiết trận.
-- Chi tiết trận: diễn biến chính, đội hình, thống kê, đối đầu từ ESPN.
-- Giải đấu, đội bóng, bảng xếp hạng.
-- Tin tức bóng đá tổng hợp từ VnExpress, có dẫn nguồn.
-- Sản phẩm bóng đá từ Tiki, có giá, ảnh, thương hiệu và link mua ngoài.
-- Tìm kiếm, phân trang, đội yêu thích.
-- Lịch cá nhân: thêm trận, bật nhắc giờ bóng lăn, nhận thông báo trong web.
-  Chỉ dùng khi đã đăng nhập; mỗi tài khoản có lịch riêng, xem được đội đã thêm.
-- Chỉ trận **sắp diễn ra** (chưa bắt đầu) mới được thêm lịch/nhắc mới; danh sách
-  “Sắp diễn ra” có nút nhanh trên từng dòng, trận đang đá/chờ/đã đá không có nút thêm.
-- Đăng ký, đăng nhập, đăng xuất.
-
-### Quản trị
-
-- Dashboard, nhật ký đồng bộ.
-- Quản lý tài khoản (khóa/mở khóa).
-- Cấu hình giải đấu (theo dõi, quốc gia, khu vực).
-- Thêm/sửa/xóa tin tức do ADMIN soạn; ảnh tải từ máy.
-- Làm mới sản phẩm bóng đá từ Tiki.
-
-## 2. Công nghệ
-
-| Thành phần | Sử dụng |
-|---|---|
-| Backend | PHP 8.0+ (OOP, namespace, autoload) |
-| CSDL | MySQL/MariaDB 10.4+ |
-| Giao diện | Bootstrap 5.3.3, Bootstrap Icons, jQuery |
-| AJAX | `public/app.js` + `api/*.php` trả JSON |
-| Dữ liệu ngoài | ESPN public API, Tiki JSON API, VnExpress |
-| Kiến trúc | MVC phân tầng: Controller → Service → Repository → Routine |
-
-## 3. Kiến trúc & luồng dữ liệu
-
-```text
-Trình duyệt
-   │  HTML + AJAX (JSON)
-   ▼
-index.php (?r=...)
-   │
-   ├── PageController / ApiController / AdminController
-   │
-   ├── Service (MatchService, SyncService, AuthService, FavoriteService,
-   │            CalendarService, NewsService, FootballProductFeedService)
-   │
-   ├── Repository (mỗi phương thức = 1 routine)
-   │
-   ├── Database::callProc("CALL sp_...(?, ...)")
-   │
-   └── MySQL/MariaDB routine
-```
-
-- `SyncService` lấy dữ liệu qua `FootballDataProvider` (hiện tại: `EspnClient`).
-- `FootballProductFeedService` lấy sản phẩm qua `TikiFootballProductProvider`.
-- `NewsService` dùng `VnExpressCrawler`.
-- `CalendarService` quản lý lịch cá nhân, nhắc trận và thông báo trong web.
-- Toàn bộ dữ liệu ngoài chỉ gọi từ máy chủ; không có key/token trong trình duyệt.
-
-### Cây thư mục
-
-```text
-app/
-  Core/          Config, Database, RoutineName, View, Url, Time,
-                 Validator, Csrf, Captcha, SafeHtml, SafeUrl, JsonResponse
-  Models/        FootballMatch, League, Team, User
-  Repositories/  Base, Match, Catalog, News, User, Favorite, Calendar,
-                 Sync, FootballProduct
-  Services/      FootballDataProvider (interface), FootballProductProvider (interface),
-                 EspnClient, TikiFootballProductProvider,
-                 FootballProductNormalizer, FootballProductClassifier, FootballProductPresenter,
-                 FootballProductFeedService, SyncService, MatchService,
-                 CalendarService, NewsService, AuthService, FavoriteService, VnExpressCrawler
-  Controllers/   PageController, ApiController, AdminController
-  bootstrap.php, helpers.php
-index.php        front controller (?r=...)
-router.php       router cho PHP built-in server
-.htaccess        chặn truy cập trực tiếp thư mục nội bộ
-api/             matches.php, match.php, favorite.php, products.php,
-                 calendar.php, notifications.php, admin/sync.php
-views/           layout, partials, home, schedule, match, leagues, standings,
-                 teams, team, favorites, calendar, news, news_detail, san_pham,
-                 auth/*, admin/*
-config/          tiki_source.json
-database/        schema.sql, seed.sql, routines.sql, migrations/
-public/          style.css, app.js, img/, images/
-tools/           smoke_test.php, check_no_sql.php, news_check.php, real_sync_check.php
-```
+ # FastFootBalInfo
+ 
+ Website thông tin bóng đá: lịch thi đấu, kết quả, chi tiết trận, giải đấu, đội bóng, bảng xếp hạng, tin tức, sản phẩm bóng đá và khu vực quản trị.
+ 
+ Đồ án học phần **Phát triển ứng dụng Web** (UEH), xây dựng bằng **PHP 8 + MySQL/MariaDB**, giao diện **Bootstrap 5**, backend **OOP + MVC**, giao tiếp **AJAX/JSON**.
+ 
+ > Nguyên tắc cốt lõi: nghiệp vụ SQL nằm trong routine CSDL. PHP chỉ gọi `CALL tên_routine(?, ...)` qua `Database::callProc()`; tên routine lấy từ `RoutineName`.
+ 
+ ## 1. Tính năng
+ 
+ ### Người dùng
+ 
+ - Trang chủ: trận đang đá, sắp diễn ra, đã kết thúc; tự cập nhật bằng AJAX.
+ - Lịch thi đấu, lọc theo ngày, giải, trạng thái; chi tiết trận.
+ - Chi tiết trận: diễn biến chính, đội hình, thống kê, đối đầu từ ESPN.
+ - Giải đấu, đội bóng, bảng xếp hạng.
+ - Tin tức bóng đá tổng hợp từ VnExpress, có dẫn nguồn.
+ - Sản phẩm bóng đá từ Tiki, có giá, ảnh, thương hiệu và link mua ngoài.
+ - Tìm kiếm, phân trang, đội yêu thích.
+ - Lịch cá nhân: thêm trận, bật nhắc giờ bóng lăn, nhận thông báo trong web.
+   Chỉ dùng khi đã đăng nhập; mỗi tài khoản có lịch riêng, xem được đội đã thêm.
+ - Chỉ trận **sắp diễn ra** (chưa bắt đầu) mới được thêm lịch/nhắc mới; danh sách
+   “Sắp diễn ra” có nút nhanh trên từng dòng, trận đang đá/chờ/đã đá không có nút thêm.
+ - Đăng ký, đăng nhập, đăng xuất.
+ 
+ ### Quản trị
+ 
+ - Dashboard, nhật ký đồng bộ.
+ - Quản lý tài khoản (khóa/mở khóa).
+ - Cấu hình giải đấu (theo dõi, quốc gia, khu vực).
+ - Thêm/sửa/xóa tin tức do ADMIN soạn; ảnh tải từ máy.
+ - Làm mới sản phẩm bóng đá từ Tiki.
+ 
+ ## 2. Công nghệ
+ 
+ | Thành phần | Sử dụng |
+ |---|---|
+ | Backend | PHP 8.0+ (OOP, namespace, autoload) |
+ | CSDL | MySQL/MariaDB 10.4+ |
+ | Giao diện | Bootstrap 5.3.3, Bootstrap Icons, jQuery |
+ | AJAX | `public/app.js` + `api/*.php` trả JSON |
+ | Dữ liệu ngoài | ESPN public API, Tiki JSON API, VnExpress |
+ | Kiến trúc | MVC phân tầng: Controller → Service → Repository → Routine |
+ 
+ ## 3. Kiến trúc & luồng dữ liệu
+ 
+ ```text
+ Trình duyệt
+    │  HTML + AJAX (JSON)
+    ▼
+ index.php (?r=...)
+    │
+    ├── PageController / ApiController / AdminController
+    │
+    ├── Service (MatchService, SyncService, AuthService, FavoriteService,
+    │            CalendarService, NewsService, FootballProductFeedService)
+    │
+    ├── Repository (mỗi phương thức = 1 routine)
+    │
+    ├── Database::callProc("CALL sp_...(?, ...)")
+    │
+    └── MySQL/MariaDB routine
+ ```
+ 
+ - `SyncService` lấy dữ liệu qua `FootballDataProvider` (hiện tại: `EspnClient`).
+ - `FootballProductFeedService` lấy sản phẩm qua `TikiFootballProductProvider`.
+ - `NewsService` dùng `VnExpressCrawler`.
+ - `CalendarService` quản lý lịch cá nhân, nhắc trận và thông báo trong web.
+ - Toàn bộ dữ liệu ngoài chỉ gọi từ máy chủ; không có key/token trong trình duyệt.
+ 
+ ### Cây thư mục
+ 
+ ```text
+ app/
+   Core/          Config, Database, RoutineName, View, Url, Time,
+                  Validator, Csrf, Captcha, SafeHtml, SafeUrl, JsonResponse
+   Models/        FootballMatch, League, Team, User
+   Repositories/  Base, Match, Catalog, News, User, Favorite, Calendar,
+                  Sync, FootballProduct
+   Services/      FootballDataProvider (interface), FootballProductProvider (interface),
+                  EspnClient, TikiFootballProductProvider,
+                  FootballProductNormalizer, FootballProductClassifier, FootballProductPresenter,
+                  FootballProductFeedService, SyncService, MatchService,
+                  CalendarService, NewsService, AuthService, FavoriteService, VnExpressCrawler
+   Controllers/   PageController, ApiController, AdminController
+   bootstrap.php, helpers.php
+ index.php        front controller (?r=...)
+ router.php       router cho PHP built-in server
+ .htaccess        chặn truy cập trực tiếp thư mục nội bộ
+ api/             matches.php, match.php, favorite.php, products.php,
+                  calendar.php, notifications.php, admin/sync.php
+ views/           layout, partials, home, schedule, match, leagues, standings,
+                  teams, team, favorites, calendar, news, news_detail, san_pham,
+                  auth/*, admin/*
+ config/          tiki_source.json
+ database/        schema.sql, seed.sql, routines.sql, migrations/
+ public/          style.css, app.js, img/, images/
+ tools/           smoke_test.php, check_no_sql.php, news_check.php, real_sync_check.php
+ ```
 
 ## 4. Cài đặt
 
