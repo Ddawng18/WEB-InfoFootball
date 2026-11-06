@@ -82,6 +82,14 @@ final class PageController
         $filter['gioi_han'] = $moiTrang;
         $filter['bo_qua'] = ($trang - 1) * $moiTrang;
         $res = $this->matches->getList($filter);
+        $homeLogos = [];
+        if (strtolower(\App\Core\Config::string('api', 'provider', 'sample')) === 'apifootball') {
+            $apiFootball = new \App\Services\ApiFootballClient();
+            foreach ($res['items'] as $match) {
+                $homeLogos[$match->getId()]['home'] = $this->cacheMatchLogo($match->getDoiNhaLogo() ?: $apiFootball->findTeamLogo($match->getDoiNhaTen()));
+                $homeLogos[$match->getId()]['away'] = $this->cacheMatchLogo($match->getDoiKhachLogo() ?: $apiFootball->findTeamLogo($match->getDoiKhachTen()));
+            }
+        }
 
         $dem = [
             'all' => $this->matches->getList($base + ['gioi_han' => 1])['tong'],
@@ -99,11 +107,18 @@ final class PageController
 
         $loiApi = in_array($kqSync['ma'], ['LOI', 'LOI_HE_THONG'], true);
 
-        $lgRes = $this->catalog->getLeagues(null, null, null, $moiGiai, ($trangGiai - 1) * $moiGiai);
+        $allowedLeagueIds = array_map('intval', explode(',', \App\Core\Config::string('api', 'league_ids', '39,140,2,78,135,61,88,94,98,340')));
+        $allLeagues = $this->catalog->getLeagues(null, null, null, 1000, 0)['items'];
+        $featuredLeagues = array_values(array_filter($allLeagues, static fn ($league) =>
+            strtolower(\App\Core\Config::string('api', 'provider', 'sample')) !== 'apifootball'
+            || in_array((int) $league->getMaApi(), $allowedLeagueIds, true)
+        ));
+        $lgRes = ['items' => array_slice($featuredLeagues, ($trangGiai - 1) * $moiGiai, $moiGiai), 'tong' => count($featuredLeagues)];
 
         View::render('home', [
             'title' => 'Bảng tỉ số',
             'items' => $res['items'],
+            'home_logos' => $homeLogos,
             'tong' => $res['tong'],
             'trang' => $trang,
             'moi_trang' => $moiTrang,
@@ -140,7 +155,10 @@ final class PageController
             'giai_id' => $giaiId,
             'trang_thai' => $trangThai,
             'trang' => $trang,
-            'leagues' => $this->catalog->getLeagues()['items'],
+            'leagues' => array_values(array_filter($this->catalog->getLeagues(null, null, null, 1000, 0)['items'], static fn ($league) =>
+                strtolower(\App\Core\Config::string('api', 'provider', 'sample')) !== 'apifootball'
+                || in_array((int) $league->getMaApi(), array_map('intval', explode(',', \App\Core\Config::string('api', 'league_ids', '39,140,2,78,135,61,88,94,98,340'))), true)
+            )),
             'user' => $this->auth->currentUser(),
         ]);
     }
@@ -153,12 +171,49 @@ final class PageController
             $this->khongTimThay('Không tìm thấy trận đấu.');
             return;
         }
+        $matchDetails = ['events' => [], 'lineups' => [], 'statistics' => []];
+        $homeSourceLogo = $tran->getDoiNhaLogo();
+        $awaySourceLogo = $tran->getDoiKhachLogo();
+        if (strtolower(\App\Core\Config::string('api', 'provider', 'sample')) === 'apifootball') {
+            try {
+                $apiFootball = new \App\Services\ApiFootballClient();
+                $matchDetails = $apiFootball->fetchMatchDetails($tran->getMaApi());
+                if ($homeSourceLogo === '') { $homeSourceLogo = $apiFootball->findTeamLogo($tran->getDoiNhaTen()); }
+                if ($awaySourceLogo === '') { $awaySourceLogo = $apiFootball->findTeamLogo($tran->getDoiKhachTen()); }
+            } catch (\Throwable $e) {
+                error_log('Không tải được chi tiết trận từ API-Football: ' . $e->getMessage());
+            }
+        }
+        $homeLogo = $this->cacheMatchLogo($homeSourceLogo);
+        $awayLogo = $this->cacheMatchLogo($awaySourceLogo);
         View::render('match', [
             'title' => $tran->getDoiNhaTen() . ' vs ' . $tran->getDoiKhachTen(),
             'tran' => $tran,
             'su_kien' => $this->matches->getEvents($id),
+            'match_details' => $matchDetails,
+            'home_logo_local' => $homeLogo,
+            'away_logo_local' => $awayLogo,
             'user' => $this->auth->currentUser(),
         ]);
+    }
+
+    private function cacheMatchLogo(string $url): string
+    {
+        if (!str_starts_with($url, 'https://media.api-sports.io/football/teams/')) {
+            return $url;
+        }
+        $name = basename(parse_url($url, PHP_URL_PATH) ?: '');
+        if (!preg_match('/^\d+\.png$/', $name)) { return ''; }
+        $dir = APP_ROOT . '/public/images/teams';
+        $path = $dir . '/' . $name;
+        if (!is_file($path)) {
+            if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+            $image = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 5], 'https' => ['timeout' => 5]]));
+            if ($image !== false && strlen($image) < 500000 && str_starts_with($image, "\x89PNG\r\n\x1a\n")) {
+                file_put_contents($path, $image);
+            }
+        }
+        return is_file($path) ? asset('images/teams/' . $name) : '';
     }
 
     private function giai(): void

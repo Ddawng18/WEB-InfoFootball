@@ -19,6 +19,8 @@ final class ApiFootballClient implements FootballDataProvider
     private string $baseUrl;
     private string $key;
     private int $season;
+    /** @var int[] */
+    private array $leagueIds;
     /** @var string[] */
     private array $countries;
 
@@ -27,6 +29,8 @@ final class ApiFootballClient implements FootballDataProvider
         $this->baseUrl = rtrim(Config::string('api', 'base_url', 'https://v3.football.api-sports.io'), '/') . '/';
         $this->key = Config::string('api', 'key', '');
         $this->season = Config::int('api', 'season', 2023);
+        $rawLeagueIds = Config::string('api', 'league_ids', '39,140,2,78,135,61,88,94,98,340');
+        $this->leagueIds = array_values(array_filter(array_map('intval', explode(',', $rawLeagueIds))));
         $raw = Config::string('api', 'countries', 'Vietnam,Japan,England');
         $this->countries = array_values(array_filter(array_map('trim', explode(',', $raw))));
     }
@@ -59,25 +63,98 @@ final class ApiFootballClient implements FootballDataProvider
             }
         }
 
-        foreach ($this->countries as $country) {
-            $l = $this->get('leagues', ['country' => $country, 'season' => $this->season]);
+        foreach ($this->leagueIds as $leagueId) {
+            $l = $this->get('leagues', ['id' => $leagueId, 'season' => $this->season]);
             foreach (($l['response'] ?? []) as $item) {
                 $lg = $item['league'] ?? [];
                 $ct = $item['country'] ?? [];
                 if (!isset($lg['id'])) {
                     continue;
                 }
-                $tenQg = is_array($ct) ? (string) ($ct['name'] ?? $country) : (string) $country;
+                $tenQg = is_array($ct) ? (string) ($ct['name'] ?? '') : (string) $ct;
                 $bundle['leagues'][] = [
                     'ma' => (string) $lg['id'],
                     'ten' => (string) ($lg['name'] ?? ''),
                     'ma_quoc_gia' => $tenQg,
                     'mua_giai' => (string) $this->season,
                 ];
+                if ($tenQg !== '') { $bundle['countries'][] = ['ma' => $tenQg, 'ten' => $tenQg]; }
+                $teams = $this->get('teams', ['league' => $leagueId, 'season' => $this->season]);
+                foreach (($teams['response'] ?? []) as $row) {
+                    $team = $row['team'] ?? [];
+                    if (empty($team['id'])) { continue; }
+                    $bundle['teams'][(string) $team['id']] = [
+                        'ma' => (string) $team['id'], 'ten' => (string) ($team['name'] ?? ''),
+                        'ma_quoc_gia' => $tenQg, 'logo_url' => (string) ($team['logo'] ?? ''),
+                    ];
+                }
             }
         }
-
+        $bundle['teams'] = array_values($bundle['teams']);
+        $bundle['countries'] = array_values(array_column(array_reverse($bundle['countries']), null, 'ma'));
         return $bundle;
+    }
+
+    /** @return array{events:array,lineups:array,statistics:array} */
+    public function fetchMatchDetails(string $fixtureId): array
+    {
+        if (!ctype_digit($fixtureId) || $this->key === '') {
+            return ['events' => [], 'lineups' => [], 'statistics' => []];
+        }
+        $cacheDir = APP_ROOT . '/storage/cache';
+        if (!is_dir($cacheDir)) { @mkdir($cacheDir, 0775, true); }
+        $cacheFile = $cacheDir . '/fixture-details-' . $fixtureId . '.json';
+        $ttl = 300;
+        if (is_file($cacheFile) && filemtime($cacheFile) > time() - $ttl) {
+            $cached = json_decode((string) file_get_contents($cacheFile), true);
+            if (is_array($cached)) { return $cached; }
+        }
+        $details = ['events' => [], 'lineups' => [], 'statistics' => []];
+        foreach (['events', 'lineups', 'statistics'] as $endpoint) {
+            $response = $this->get('fixtures/' . $endpoint, ['fixture' => (int) $fixtureId]);
+            $details[$endpoint] = is_array($response['response'] ?? null) ? $response['response'] : [];
+        }
+        if ($details['events'] !== [] || $details['lineups'] !== [] || $details['statistics'] !== []) {
+            file_put_contents($cacheFile, json_encode($details, JSON_UNESCAPED_UNICODE));
+        }
+        return $details;
+    }
+
+    public function findTeamLogo(string $teamName): string
+    {
+        $name = trim($teamName);
+        if ($name === '' || $this->key === '') { return ''; }
+        $aliases = [
+            'urawa red diamonds' => ['Urawa Reds', 'Urawa'],
+            'hà nội fc' => ['Hanoi FC', 'Hanoi'],
+            'hoàng anh gia lai' => ['Hoang Anh Gia Lai', 'HAGL'],
+            'vietnam' => ['Vietnam'],
+        ];
+        $queries = array_values(array_unique(array_merge([$name], $aliases[mb_strtolower($name, 'UTF-8')] ?? [])));
+        $cache = APP_ROOT . '/storage/cache/team-logo-v2-' . sha1(mb_strtolower($name, 'UTF-8')) . '.txt';
+        if (is_file($cache) && filemtime($cache) > time() - 86400) {
+            $cached = trim((string) file_get_contents($cache));
+            return $cached === '-' ? '' : $cached;
+        }
+        foreach ($queries as $query) {
+            $data = $this->get('teams', ['search' => $query]);
+            $rows = $data['response'] ?? [];
+            foreach ($rows as $row) {
+                $found = mb_strtolower((string) ($row['team']['name'] ?? ''), 'UTF-8');
+                $wanted = mb_strtolower($query, 'UTF-8');
+                if ($found !== '' && ($found === $wanted || str_contains($found, $wanted) || str_contains($wanted, $found))) {
+                    $url = (string) ($row['team']['logo'] ?? '');
+                    if (str_starts_with($url, 'https://media.api-sports.io/football/teams/')) {
+                        if (!is_dir(dirname($cache))) { @mkdir(dirname($cache), 0775, true); }
+                        @file_put_contents($cache, $url);
+                        return $url;
+                    }
+                }
+            }
+        }
+        if (!is_dir(dirname($cache))) { @mkdir(dirname($cache), 0775, true); }
+        @file_put_contents($cache, '-');
+        return '';
     }
 
     /**
@@ -144,6 +221,10 @@ final class ApiFootballClient implements FootballDataProvider
             }
             $fx = $f['fixture'] ?? [];
             $lg = $f['league'] ?? [];
+            $leagueCountry = trim((string) ($lg['country'] ?? ''));
+            if (!isset($lg['id']) || !in_array((int) $lg['id'], $this->leagueIds, true)) {
+                continue;
+            }
             $tm = $f['teams'] ?? [];
             $goals = $f['goals'] ?? [];
             $st = $fx['status'] ?? [];
