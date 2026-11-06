@@ -32,6 +32,7 @@ quản trị) tích hợp **Live Score API bên ngoài** đồng bộ vào **MyS
    Tất cả dùng `utf8mb4`. CSDL tên `fastfootbalinfo`.
    > Nếu CSDL đã tạo từ trước và bạn không muốn import lại, chạy thêm migration:
    > `mysql -u root fastfootbalinfo < database/migrations/001_news_crawl.sql` rồi chạy lại `database/routines.sql`.
+   > Để bổ sung mục Lưu niệm trên CSDL hiện có, chạy migration `002_souvenirs.sql`, sau đó migration `003_souvenirs_admin.sql`, rồi chạy lại `database/routines.sql` bằng `utf8mb4`.
 4. **Truy cập**: `http://localhost/fastfootbalinfo/`.
 
 ## 3. Tài khoản mẫu
@@ -74,7 +75,7 @@ app/
   bootstrap.php, helpers.php
 api/           matches.php, match.php, favorite.php, admin/sync.php
 views/         layout, partials, home, schedule, match, leagues, teams, team, favorites,
-               news, news_detail, auth/*, admin/*
+               news, news_detail, souvenirs, auth/*, admin/*
 database/      schema.sql, seed.sql, routines.sql
 sample/        live.json, fixtures.json, leagues.json   (provider = sample)
 public/        style.css, app.js
@@ -95,6 +96,8 @@ Tài liệu giao diện (bố cục, component, trạng thái, responsive, quy �
 | F6 | Đồng bộ API → MySQL | `SyncService`, `FootballDataProvider`, các `sp_upsert_*`, `sp_bat_dau/ket_thuc_dong_bo` |
 | F7 | Đăng ký/đăng nhập (khóa 5 lần) | `AuthService`, `sp_dang_ky_tai_khoan`, `sp_lay_tai_khoan_dang_nhap`, `sp_ghi_nhan_dang_nhap` |
 | F8 | Quản trị | `AdminController`, `views/admin/*`, `sp_thong_ke_tong_quan`, `sp_admin_*` |
+| Lưu niệm | Danh mục và 12 sản phẩm/trang | `views/souvenirs.php`, `SouvenirRepository`, `sp_ds_san_pham_luu_niem` |
+| Quản lý lưu niệm | Chỉ ADMIN: thêm, sửa, xóa, đổi giá và xem lịch sử giá | `AdminController`, `views/admin/souvenirs.php`, `sp_admin_*_san_pham_luu_niem` |
 
 Ràng buộc cốt lõi (đề cương mục 7.1): mọi thao tác CSDL đi qua routine; `Database::callProc` là nơi **duy nhất**
 phát sinh `CALL`; tên routine lấy từ hằng số `RoutineName` (không nhận từ request).
@@ -109,10 +112,12 @@ C:\xampp\php\php.exe tools\check_no_sql.php
 C:\xampp\php\php.exe tools\smoke_test.php
 ```
 
-Chạy thử nhanh bằng PHP built-in server (không cần Apache):
+Chạy thử nhanh bằng PHP built-in server (không cần Apache), từ thư mục dự án:
 ```bat
-C:\xampp\php\php.exe -S 127.0.0.1:8099 -t fastfootbalinfo
+C:\xampp\php\php.exe -S 127.0.0.1:8099
 ```
+Mục Lưu niệm: `http://127.0.0.1:8099/index.php?r=souvenirs`.
+Quản lý lưu niệm (ADMIN): `http://127.0.0.1:8099/index.php?r=admin-souvenirs`.
 
 Cào tin bóng đá từ VnExpress (kiểm tra nhanh, không cần qua web):
 ```bat

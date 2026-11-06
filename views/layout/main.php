@@ -23,7 +23,7 @@ $tieuDe = ($title ?? '') !== '' ? $title . ' · FastFootBalInfo' : 'FastFootBalI
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
     <link href="<?= h(asset('style.css')) ?>" rel="stylesheet">
 </head>
-<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<body class="d-flex flex-column min-vh-100<?= isset($_GET['r']) && $_GET['r'] === 'souvenirs' ? ' souvenir-body' : ' bg-body-tertiary' ?>">
 
 <a class="as-skip" href="#main">Bỏ qua tới nội dung</a>
 

@@ -52,6 +52,7 @@ Biến truyền vào view: `$title` (tiêu đề tab) và `$user` (`\App\Models\
 |------------|------|-------|
 | Navbar | `views/partials/navbar.php` | Brand khiên chữ F, menu chính (ẩn "Đội yêu thích" khi chưa đăng nhập, "Quản trị" khi không phải ADMIN), dropdown người dùng |
 | Footer | `views/partials/footer.php` | Bản quyền, công bố nguồn (`API-Football`/`Live Score API`/`Dữ liệu mẫu`), thời điểm đồng bộ |
+| Lưu niệm | `views/souvenirs.php` | Lọc danh mục, sắp xếp và lưới sản phẩm responsive; nút mua disabled |
 | Hàng trận (bảng tỉ số) | `views/partials/match_row.php` | Hàng compact: giờ/phút, đội nhà (tên + logo), tỉ số, đội khách, chip trạng thái; nhóm theo giải bằng `.as-league-head` |
 | Thẻ trận (dùng ở trang đội) | `views/partials/match_card.php` | Giải + giờ, chip trạng thái, **crest logo đội thật**, tỉ số 2 đội, link chi tiết |
 | Crest đội | `app/helpers.php` → `crest_html()` | `<img>` logo thật nếu có; tự gỡ ảnh khi lỗi để lộ chữ cái đầu |
@@ -104,9 +105,11 @@ Route dùng `index.php?r=...`; vùng quản trị dùng prefix `admin*`.
 | `doi-chitiet` | `views/team.php` | — | Đội + trận sắp tới/gần đây + nút yêu thích |
 | `tintuc` | `views/news.php` | **9** tin | Lưới 3 cột; tự cào tin theo TTL |
 | `tintuc-chitiet` | `views/news_detail.php` | 1 tin | Dẫn nguồn VnExpress |
+| `souvenirs` | `views/souvenirs.php` | **12** sản phẩm | Lọc danh mục, sắp xếp theo giá/ngày tạo, chưa có giỏ hàng |
 | `dangnhap`, `dangky` | `views/auth/*.php` | — | Form POST có CSRF |
 | `yeuthich` | `views/favorites.php` | **10** đội | Yêu cầu đăng nhập |
 | `admin`, `admin-taikhoan`, `admin-giai` | `views/admin/*.php` | 20 tài khoản/trang | Chỉ ADMIN |
+| `admin-souvenirs` | `views/admin/souvenirs.php` | **10** sản phẩm | Chỉ ADMIN; lọc danh mục, đổi giá nhanh, thêm/sửa/xóa |
 | lỗi | `views/error.php` | — | 404/500 kèm minh họa |
 
 ## 6. Trạng thái hiển thị (states)
@@ -132,6 +135,7 @@ không cuộn ngang.
 | `< 576px` (mobile) | Navbar thu gọn (hamburger); trang chủ 1 cột; lưới tin/đội 1 cột; ảnh tin cao 150px |
 | `≥ 768px` | Lưới tin/đội 2 cột; footer 2 cột |
 | `≥ 992px` (desktop) | Trang chủ 3 cột; lưới tin/đội 3 cột |
+| Lưu niệm | 1 cột dưới 576px, 2 cột từ 576px, 3 cột từ 992px, 4 cột từ 1200px |
 
 ## 8. Tương tác động (JavaScript)
 

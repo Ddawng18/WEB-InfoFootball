@@ -48,4 +48,13 @@ final class RoutineName
     public const DS_TIN_TUC = 'sp_ds_tin_tuc';
     public const CHI_TIET_TIN_TUC = 'sp_chi_tiet_tin_tuc';
     public const UPSERT_TIN_TUC = 'sp_upsert_tin_tuc';
+    public const DS_DANH_MUC_LUU_NIEM = 'sp_ds_danh_muc_luu_niem';
+    public const DS_SAN_PHAM_LUU_NIEM = 'sp_ds_san_pham_luu_niem';
+    public const ADMIN_DS_SAN_PHAM_LUU_NIEM = 'sp_admin_ds_san_pham_luu_niem';
+    public const ADMIN_CHI_TIET_SAN_PHAM_LUU_NIEM = 'sp_admin_chi_tiet_san_pham_luu_niem';
+    public const ADMIN_THEM_SAN_PHAM_LUU_NIEM = 'sp_admin_them_san_pham_luu_niem';
+    public const ADMIN_SUA_SAN_PHAM_LUU_NIEM = 'sp_admin_sua_san_pham_luu_niem';
+    public const ADMIN_DOI_GIA_LUU_NIEM = 'sp_admin_doi_gia_luu_niem';
+    public const ADMIN_XOA_SAN_PHAM_LUU_NIEM = 'sp_admin_xoa_san_pham_luu_niem';
+    public const DS_LICH_SU_GIA_LUU_NIEM = 'sp_ds_lich_su_gia_luu_niem';
 }

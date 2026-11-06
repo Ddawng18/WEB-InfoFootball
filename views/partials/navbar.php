@@ -21,6 +21,7 @@ $active = static fn (string ...$names): string => in_array($current, $names, tru
                 <a class="<?= trim($active('giai')) ?>" href="<?= h(route('giai')) ?>">Giải đấu</a>
                 <a class="<?= trim($active('doi', 'doi-chitiet')) ?>" href="<?= h(route('doi')) ?>">Đội bóng</a>
                 <a class="<?= trim($active('tintuc', 'tintuc-chitiet')) ?>" href="<?= h(route('tintuc')) ?>">Tin tức</a>
+                <a class="<?= trim($active('souvenirs')) ?> as-nav-souvenir" href="<?= h(route('souvenirs')) ?>" <?= $current === 'souvenirs' ? 'aria-current="page"' : '' ?>>Lưu niệm</a>
             </nav>
 
             <div class="as-spacer"></div>
@@ -60,6 +61,7 @@ $active = static fn (string ...$names): string => in_array($current, $names, tru
                 <a class="as-mobile-link" href="<?= h(route('giai')) ?>">Giải đấu</a>
                 <a class="as-mobile-link" href="<?= h(route('doi')) ?>">Đội bóng</a>
                 <a class="as-mobile-link" href="<?= h(route('tintuc')) ?>">Tin tức</a>
+                <a class="as-mobile-link<?= $current === 'souvenirs' ? ' active' : '' ?>" href="<?= h(route('souvenirs')) ?>" <?= $current === 'souvenirs' ? 'aria-current="page"' : '' ?>>Lưu niệm</a>
                 <?php if ($user): ?>
                     <a class="as-mobile-link" href="<?= h(route('yeuthich')) ?>">Đội yêu thích</a>
                 <?php endif; ?>

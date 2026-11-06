@@ -223,3 +223,40 @@ CREATE TABLE tin_tuc (
     CONSTRAINT fk_tt_danh_muc FOREIGN KEY (danh_muc_id) REFERENCES danh_muc_tin (danh_muc_id)
         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE danh_muc_luu_niem (
+    ma INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ten VARCHAR(120) NOT NULL,
+    slug VARCHAR(120) NOT NULL,
+    thu_tu SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (ma),
+    UNIQUE KEY uq_dm_luu_niem_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE san_pham_luu_niem (
+    ma INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ma_danh_muc INT UNSIGNED NOT NULL,
+    ten VARCHAR(200) NOT NULL,
+    mo_ta TEXT NOT NULL,
+    gia DECIMAL(12,0) NOT NULL,
+    anh_url VARCHAR(255) NOT NULL,
+    con_hang TINYINT(1) NOT NULL DEFAULT 1,
+    hien_thi TINYINT(1) NOT NULL DEFAULT 1,
+    ngay_tao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (ma),
+    KEY idx_spln_danh_muc (ma_danh_muc),
+    KEY idx_spln_ngay_tao (ngay_tao),
+    CONSTRAINT fk_spln_danh_muc FOREIGN KEY (ma_danh_muc) REFERENCES danh_muc_luu_niem (ma)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE lich_su_gia_luu_niem (
+    ma BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ma_san_pham INT UNSIGNED NOT NULL,
+    gia_cu DECIMAL(12,0) NOT NULL,
+    gia_moi DECIMAL(12,0) NOT NULL,
+    ma_tai_khoan INT UNSIGNED NOT NULL,
+    thoi_diem DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (ma),
+    KEY idx_lsgln_san_pham (ma_san_pham, thoi_diem),
+    KEY idx_lsgln_tai_khoan (ma_tai_khoan)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

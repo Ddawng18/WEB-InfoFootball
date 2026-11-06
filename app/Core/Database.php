@@ -62,7 +62,17 @@ final class Database
             $stmt->bind_param($types, ...$values);
         }
 
-        $stmt->execute();
+        if (!$stmt->execute()) {
+            $error = $stmt->error;
+            $stmt->close();
+            while ($this->mysqli->more_results() && $this->mysqli->next_result()) {
+                $extra = $this->mysqli->store_result();
+                if ($extra instanceof \mysqli_result) {
+                    $extra->free();
+                }
+            }
+            throw new \RuntimeException('Không thực hiện được CALL ' . $proc . ': ' . $error);
+        }
         $rows = [];
         $result = $stmt->get_result();
         if ($result instanceof \mysqli_result) {

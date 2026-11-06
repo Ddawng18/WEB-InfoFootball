@@ -8,6 +8,7 @@ use App\Core\Time;
 use App\Core\Validator;
 use App\Core\View;
 use App\Repositories\CatalogRepository;
+use App\Repositories\SouvenirRepository;
 use App\Services\AuthService;
 use App\Services\FavoriteService;
 use App\Services\MatchService;
@@ -19,6 +20,7 @@ final class PageController
 {
     private MatchService $matches;
     private CatalogRepository $catalog;
+    private SouvenirRepository $souvenirs;
     private AuthService $auth;
     private FavoriteService $favorites;
 
@@ -26,6 +28,7 @@ final class PageController
     {
         $this->matches = new MatchService();
         $this->catalog = new CatalogRepository();
+        $this->souvenirs = new SouvenirRepository();
         $this->auth = new AuthService();
         $this->favorites = new FavoriteService();
     }
@@ -45,6 +48,7 @@ final class PageController
             'dangxuat' => $this->dangXuat(),
             'tintuc' => $this->tinTuc(),
             'tintuc-chitiet' => $this->tinTucChiTiet(),
+            'souvenirs' => $this->souvenirs(),
             default => $this->khongTimThay(),
         };
     }
@@ -409,6 +413,33 @@ final class PageController
         View::render('news_detail', [
             'title' => (string) $tin['tieu_de'],
             'tin' => $tin,
+            'user' => $this->auth->currentUser(),
+        ]);
+    }
+
+    private function souvenirs(): void
+    {
+        $categories = $this->souvenirs->getCategories();
+        $categoryIds = array_map(static fn (array $category): int => (int) $category['ma'], $categories);
+        $requestedCategory = Validator::soNguyenKhongAm($_GET['danh_muc'] ?? null, 0);
+        $categoryId = in_array($requestedCategory, $categoryIds, true) ? $requestedCategory : 0;
+        $sort = $_GET['sap_xep'] ?? 'moi_nhat';
+        if (!is_string($sort) || !in_array($sort, ['moi_nhat', 'gia_tang', 'gia_giam'], true)) {
+            $sort = 'moi_nhat';
+        }
+        $page = min(1000000, Validator::soNguyenDuong($_GET['trang'] ?? null) ?? 1);
+        $perPage = 12;
+        $result = $this->souvenirs->getProducts($categoryId, $sort, $page, $perPage);
+
+        View::render('souvenirs', [
+            'title' => 'Lưu niệm',
+            'categories' => $categories,
+            'category_id' => $categoryId,
+            'sort' => $sort,
+            'items' => $result['items'],
+            'tong' => $result['tong'],
+            'trang' => $page,
+            'moi_trang' => $perPage,
             'user' => $this->auth->currentUser(),
         ]);
     }
