@@ -10,6 +10,8 @@ $chip = match ($m->getTrangThai()) {
     default => 'as-chip muted',
 };
 $phut = ($live && $m->getPhut() > 0) ? $m->getPhut() . "'" : '';
+$homeLogo = $home_logos[$m->getId()]['home'] ?? $m->getDoiNhaLogo();
+$awayLogo = $home_logos[$m->getId()]['away'] ?? $m->getDoiKhachLogo();
 ?>
 <div class="as-row<?= $live ? ' is-live' : '' ?>" data-id="<?= (int) $m->getId() ?>">
     <div class="as-time">
@@ -22,7 +24,7 @@ $phut = ($live && $m->getPhut() > 0) ? $m->getPhut() . "'" : '';
 
     <div class="as-team home">
         <a class="nm" href="<?= h(route('doi-chitiet', ['id' => $m->getDoiNhaId()])) ?>"><?= h($m->getDoiNhaTen()) ?></a>
-        <?= crest_html($m->getDoiNhaTen(), $m->getDoiNhaLogo(), 'ink', 'sm', route('doi-chitiet', ['id' => $m->getDoiNhaId()])) ?>
+        <?= crest_html($m->getDoiNhaTen(), $homeLogo, 'ink', 'sm', route('doi-chitiet', ['id' => $m->getDoiNhaId()])) ?>
     </div>
 
     <a class="as-score<?= $soon ? ' soon' : '' ?>" href="<?= h(route('tran', ['id' => $m->getId()])) ?>">
@@ -30,7 +32,7 @@ $phut = ($live && $m->getPhut() > 0) ? $m->getPhut() . "'" : '';
     </a>
 
     <div class="as-team away">
-        <?= crest_html($m->getDoiKhachTen(), $m->getDoiKhachLogo(), 'muted', 'sm', route('doi-chitiet', ['id' => $m->getDoiKhachId()])) ?>
+        <?= crest_html($m->getDoiKhachTen(), $awayLogo, 'muted', 'sm', route('doi-chitiet', ['id' => $m->getDoiKhachId()])) ?>
         <a class="nm" href="<?= h(route('doi-chitiet', ['id' => $m->getDoiKhachId()])) ?>"><?= h($m->getDoiKhachTen()) ?></a>
     </div>
 
