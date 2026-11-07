@@ -9,6 +9,24 @@
         <?php endif; ?>
     </header>
 
+    <?php
+    $cartMessages = [
+        'added' => ['success', 'Đã thêm sản phẩm vào giỏ hàng.'],
+        'quantity_capped' => ['warning', 'Số lượng sản phẩm trong giỏ đã đạt tối đa 10.'],
+        'cart_full' => ['warning', 'Giỏ hàng đã đạt tối đa 20 sản phẩm khác nhau.'],
+        'unavailable' => ['warning', 'Sản phẩm không còn bán hoặc đã hết hàng.'],
+        'product_not_found' => ['warning', 'Không tìm thấy sản phẩm.'],
+        'invalid_quantity' => ['warning', 'Số lượng phải từ 1 đến 10.'],
+        'account_inactive' => ['warning', 'Tài khoản không hoạt động. Vui lòng đăng nhập lại.'],
+        'csrf' => ['danger', 'Phiên làm việc hết hạn, vui lòng thử lại.'],
+        'invalid_action' => ['warning', 'Thao tác giỏ hàng không hợp lệ.'],
+        'cart_error' => ['danger', 'Không thể xử lý giỏ hàng lúc này. Vui lòng thử lại.'],
+    ];
+    ?>
+    <?php if (isset($cartMessages[$msg])): [$messageType, $messageText] = $cartMessages[$msg]; ?>
+        <div class="alert alert-<?= h($messageType) ?>" role="status"><?= h($messageText) ?></div>
+    <?php endif; ?>
+
     <div class="souvenir-toolbar">
         <nav class="souvenir-filters" aria-label="Danh mục lưu niệm">
             <a class="souvenir-filter<?= $category_id === 0 ? ' active' : '' ?>"
@@ -63,7 +81,16 @@
                         <?php if ((int) $item['con_hang'] === 0): ?>
                             <button class="souvenir-cart" type="button" disabled title="Hết hàng">Hết hàng</button>
                         <?php else: ?>
-                            <button class="souvenir-cart" type="button" disabled title="Chức năng đang phát triển">Thêm vào giỏ hàng</button>
+                            <form class="souvenir-cart-form" method="post" action="<?= h(route('giohang')) ?>">
+                                <?= App\Core\Csrf::field() ?>
+                                <input type="hidden" name="hanh_dong" value="them">
+                                <input type="hidden" name="ma_san_pham" value="<?= (int) $item['ma'] ?>">
+                                <input type="hidden" name="so_luong" value="1">
+                                <input type="hidden" name="danh_muc" value="<?= $category_id ?>">
+                                <input type="hidden" name="sap_xep" value="<?= h($sort) ?>">
+                                <input type="hidden" name="trang" value="<?= $trang ?>">
+                                <button class="souvenir-cart souvenir-cart--active" type="submit">Thêm vào giỏ hàng</button>
+                            </form>
                         <?php endif; ?>
                     </div>
                 </article>

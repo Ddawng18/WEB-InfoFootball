@@ -32,7 +32,7 @@ quản trị) tích hợp **Live Score API bên ngoài** đồng bộ vào **MyS
    Tất cả dùng `utf8mb4`. CSDL tên `fastfootbalinfo`.
    > Nếu CSDL đã tạo từ trước và bạn không muốn import lại, chạy thêm migration:
    > `mysql -u root fastfootbalinfo < database/migrations/001_news_crawl.sql` rồi chạy lại `database/routines.sql`.
-   > Để bổ sung mục Lưu niệm trên CSDL hiện có, chạy migration `002_souvenirs.sql`, sau đó migration `003_souvenirs_admin.sql`, rồi chạy lại `database/routines.sql` bằng `utf8mb4`.
+   > Để bổ sung mục Lưu niệm và giỏ hàng trên CSDL hiện có, chạy lần lượt migration `002_souvenirs.sql`, `003_souvenirs_admin.sql`, `004_cart.sql`, rồi chạy lại `database/routines.sql` bằng `utf8mb4`.
 4. **Truy cập**: `http://localhost/fastfootbalinfo/`.
 
 ## 3. Tài khoản mẫu
@@ -68,7 +68,7 @@ Trình duyệt **không bao giờ** gọi API bóng đá trực tiếp (key/secr
 app/
   Core/        Config, Database (callProc), RoutineName, Validator, JsonResponse, Csrf, View, Url, Time
   Models/      FootballMatch, League, Team, User
-  Repositories/ Base, Match, Catalog, User, Favorite, Sync
+  Repositories/ Base, Match, Catalog, User, Favorite, Cart, Sync
   Services/    FootballDataProvider(interface), LiveScoreApiClient, SampleDataProvider,
                SyncService, MatchService, AuthService, FavoriteService
   Controllers/ PageController, ApiController, AdminController
@@ -97,6 +97,7 @@ Tài liệu giao diện (bố cục, component, trạng thái, responsive, quy �
 | F7 | Đăng ký/đăng nhập (khóa 5 lần) | `AuthService`, `sp_dang_ky_tai_khoan`, `sp_lay_tai_khoan_dang_nhap`, `sp_ghi_nhan_dang_nhap` |
 | F8 | Quản trị | `AdminController`, `views/admin/*`, `sp_thong_ke_tong_quan`, `sp_admin_*` |
 | Lưu niệm | Danh mục và 12 sản phẩm/trang | `views/souvenirs.php`, `SouvenirRepository`, `sp_ds_san_pham_luu_niem` |
+| Giỏ hàng | Chỉ tài khoản đang hoạt động; tối đa 20 sản phẩm khác nhau, mỗi sản phẩm 1–10; không đặt hàng/thanh toán | `views/cart.php`, `CartRepository`, `sp_gio_hang_*` |
 | Quản lý lưu niệm | Chỉ ADMIN: thêm, sửa, xóa, đổi giá và xem lịch sử giá | `AdminController`, `views/admin/souvenirs.php`, `sp_admin_*_san_pham_luu_niem` |
 
 Ràng buộc cốt lõi (đề cương mục 7.1): mọi thao tác CSDL đi qua routine; `Database::callProc` là nơi **duy nhất**
@@ -135,7 +136,7 @@ C:\xampp\php\php.exe tools\purge_sample.php
 
 Các quyết định chốt theo mặc định đề xuất được ghi tại [`docs/QUYET_DINH_Q1-Q9.md`](docs/QUYET_DINH_Q1-Q9.md):
 tích hợp API hai mức (Q1), chỉ gọi API ngoài từ máy chủ (Q7), phạm vi châu Á theo khu vực do quản trị
-gán + tin tức là Should-have (Q8), và loại bỏ giỏ hàng/đặt hàng (Q4).
+gán + tin tức là Should-have (Q8), giỏ hàng có giới hạn nhưng chưa đặt hàng/thanh toán (Q4).
 
 ## 7. Ghi chú thiết kế
 

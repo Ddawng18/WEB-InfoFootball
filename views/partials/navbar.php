@@ -22,6 +22,9 @@ $active = static fn (string ...$names): string => in_array($current, $names, tru
                 <a class="<?= trim($active('doi', 'doi-chitiet')) ?>" href="<?= h(route('doi')) ?>">Đội bóng</a>
                 <a class="<?= trim($active('tintuc', 'tintuc-chitiet')) ?>" href="<?= h(route('tintuc')) ?>">Tin tức</a>
                 <a class="<?= trim($active('souvenirs')) ?> as-nav-souvenir" href="<?= h(route('souvenirs')) ?>" <?= $current === 'souvenirs' ? 'aria-current="page"' : '' ?>>Lưu niệm</a>
+                <?php if ($user): ?>
+                    <a class="<?= trim($active('giohang')) ?> as-nav-cart" href="<?= h(route('giohang')) ?>" <?= $current === 'giohang' ? 'aria-current="page"' : '' ?>>Giỏ hàng</a>
+                <?php endif; ?>
             </nav>
 
             <div class="as-spacer"></div>
@@ -63,6 +66,7 @@ $active = static fn (string ...$names): string => in_array($current, $names, tru
                 <a class="as-mobile-link" href="<?= h(route('tintuc')) ?>">Tin tức</a>
                 <a class="as-mobile-link<?= $current === 'souvenirs' ? ' active' : '' ?>" href="<?= h(route('souvenirs')) ?>" <?= $current === 'souvenirs' ? 'aria-current="page"' : '' ?>>Lưu niệm</a>
                 <?php if ($user): ?>
+                    <a class="as-mobile-link<?= $current === 'giohang' ? ' active' : '' ?>" href="<?= h(route('giohang')) ?>" <?= $current === 'giohang' ? 'aria-current="page"' : '' ?>>Giỏ hàng</a>
                     <a class="as-mobile-link" href="<?= h(route('yeuthich')) ?>">Đội yêu thích</a>
                 <?php endif; ?>
                 <?php if ($user && $user->isAdmin()): ?>

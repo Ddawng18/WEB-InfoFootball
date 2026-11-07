@@ -57,4 +57,11 @@ final class RoutineName
     public const ADMIN_DOI_GIA_LUU_NIEM = 'sp_admin_doi_gia_luu_niem';
     public const ADMIN_XOA_SAN_PHAM_LUU_NIEM = 'sp_admin_xoa_san_pham_luu_niem';
     public const DS_LICH_SU_GIA_LUU_NIEM = 'sp_ds_lich_su_gia_luu_niem';
+
+    public const GIO_HANG_THEM = 'sp_gio_hang_them';
+    public const GIO_HANG_DOC = 'sp_gio_hang_doc';
+    public const GIO_HANG_CAP_NHAT = 'sp_gio_hang_cap_nhat';
+    public const GIO_HANG_XOA = 'sp_gio_hang_xoa';
+    public const GIO_HANG_XOA_HET = 'sp_gio_hang_xoa_het';
+    public const GIO_HANG_DEM = 'sp_gio_hang_dem';
 }

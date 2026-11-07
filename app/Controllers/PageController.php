@@ -8,6 +8,7 @@ use App\Core\Time;
 use App\Core\Validator;
 use App\Core\View;
 use App\Repositories\CatalogRepository;
+use App\Repositories\CartRepository;
 use App\Repositories\SouvenirRepository;
 use App\Services\AuthService;
 use App\Services\FavoriteService;
@@ -21,6 +22,7 @@ final class PageController
     private MatchService $matches;
     private CatalogRepository $catalog;
     private SouvenirRepository $souvenirs;
+    private CartRepository $cart;
     private AuthService $auth;
     private FavoriteService $favorites;
 
@@ -29,6 +31,7 @@ final class PageController
         $this->matches = new MatchService();
         $this->catalog = new CatalogRepository();
         $this->souvenirs = new SouvenirRepository();
+        $this->cart = new CartRepository();
         $this->auth = new AuthService();
         $this->favorites = new FavoriteService();
     }
@@ -49,6 +52,7 @@ final class PageController
             'tintuc' => $this->tinTuc(),
             'tintuc-chitiet' => $this->tinTucChiTiet(),
             'souvenirs' => $this->souvenirs(),
+            'giohang' => $this->gioHang(),
             default => $this->khongTimThay(),
         };
     }
@@ -440,8 +444,144 @@ final class PageController
             'tong' => $result['tong'],
             'trang' => $page,
             'moi_trang' => $perPage,
+            'msg' => Validator::chuoi($_GET['msg'] ?? '', 40),
             'user' => $this->auth->currentUser(),
         ]);
+    }
+
+    private function gioHang(): void
+    {
+        if (!$this->auth->daDangNhap()) {
+            $this->chuyenTrang(route('dangnhap', ['msg' => 'can-dang-nhap']));
+            return;
+        }
+
+        $accountId = (int) $this->auth->taiKhoanId();
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            $token = is_string($_POST[Csrf::KEY] ?? null) ? $_POST[Csrf::KEY] : null;
+            if (!Csrf::check($token)) {
+                $this->chuyenTrang($this->cartPostUrl('csrf'));
+                return;
+            }
+
+            $action = is_string($_POST['hanh_dong'] ?? null) ? $_POST['hanh_dong'] : '';
+            try {
+                if ($action === 'them' || $action === 'capnhat') {
+                    $productId = $this->cartIntegerInput($_POST['ma_san_pham'] ?? null, 1, PHP_INT_MAX);
+                    $quantity = $this->cartIntegerInput($_POST['so_luong'] ?? null, 1, 10);
+                    if ($productId === null) {
+                        $this->chuyenTrang($this->cartPostUrl('product_not_found'));
+                        return;
+                    }
+                    if ($quantity === null) {
+                        $this->chuyenTrang($this->cartPostUrl('invalid_quantity'));
+                        return;
+                    }
+                    $result = $action === 'them'
+                        ? $this->cart->add($accountId, $productId, $quantity)
+                        : $this->cart->update($accountId, $productId, $quantity);
+                    $message = match ($result) {
+                        'OK' => $action === 'them' ? 'added' : 'updated',
+                        'GIOI_HAN_SO_LUONG' => 'quantity_capped',
+                        default => 'cart_error',
+                    };
+                } elseif ($action === 'xoa') {
+                    $productId = $this->cartIntegerInput($_POST['ma_san_pham'] ?? null, 1, PHP_INT_MAX);
+                    if ($productId === null) {
+                        $this->chuyenTrang($this->cartPostUrl('product_not_found'));
+                        return;
+                    }
+                    $result = $this->cart->delete($accountId, $productId);
+                    $message = $result === 'OK'
+                        ? 'deleted'
+                        : ($result === 'KHONG_CO_TRONG_GIO' ? 'cart_item_missing' : 'cart_error');
+                } elseif ($action === 'xoahet') {
+                    $result = $this->cart->clear($accountId);
+                    $message = $result === 'OK' ? 'cleared' : 'cart_error';
+                } else {
+                    $message = 'invalid_action';
+                }
+            } catch (\Throwable $e) {
+                error_log('Không thể xử lý giỏ hàng: ' . $e->getMessage());
+                $message = $this->cartExceptionMessage($e);
+            }
+            $this->chuyenTrang($this->cartPostUrl($message));
+            return;
+        }
+
+        $message = Validator::chuoi($_GET['msg'] ?? '', 40);
+        try {
+            $items = $this->cart->getItems($accountId);
+        } catch (\Throwable $e) {
+            error_log('Không thể đọc giỏ hàng: ' . $e->getMessage());
+            $items = [];
+            $message = $this->cartExceptionMessage($e);
+        }
+
+        View::render('cart', [
+            'title' => 'Giỏ hàng',
+            'items' => $items,
+            'msg' => $message,
+            'user' => $this->auth->currentUser(),
+        ]);
+    }
+
+    private function cartIntegerInput($value, int $min, int $max): ?int
+    {
+        if (!is_string($value) && !is_int($value)) {
+            return null;
+        }
+        $value = trim((string) $value);
+        if (!preg_match('/^[0-9]+$/D', $value)) {
+            return null;
+        }
+        $number = (int) $value;
+        return $number >= $min && $number <= $max ? $number : null;
+    }
+
+    private function cartExceptionMessage(\Throwable $exception): string
+    {
+        $detail = $exception->getMessage();
+        if (strpos($detail, 'Tài khoản không tồn tại hoặc không hoạt động') !== false) {
+            return 'account_inactive';
+        }
+        if (strpos($detail, 'Số lượng phải từ 1 đến 10') !== false) {
+            return 'invalid_quantity';
+        }
+        if (strpos($detail, 'Sản phẩm không tồn tại') !== false) {
+            return 'product_not_found';
+        }
+        if (strpos($detail, 'Sản phẩm đang ẩn hoặc đã hết hàng') !== false) {
+            return 'unavailable';
+        }
+        if (strpos($detail, 'Giỏ hàng chỉ có thể chứa tối đa 20') !== false) {
+            return 'cart_full';
+        }
+        if (strpos($detail, 'Sản phẩm không có trong giỏ hàng') !== false) {
+            return 'cart_item_missing';
+        }
+        return 'cart_error';
+    }
+
+    private function cartPostUrl(string $message): string
+    {
+        if (array_key_exists('danh_muc', $_POST)
+            && array_key_exists('sap_xep', $_POST)
+            && array_key_exists('trang', $_POST)) {
+            $categoryId = $this->cartIntegerInput($_POST['danh_muc'], 0, PHP_INT_MAX) ?? 0;
+            $sort = is_string($_POST['sap_xep'] ?? null)
+                && in_array($_POST['sap_xep'], ['moi_nhat', 'gia_tang', 'gia_giam'], true)
+                ? $_POST['sap_xep']
+                : 'moi_nhat';
+            $page = min(1000000, $this->cartIntegerInput($_POST['trang'], 1, PHP_INT_MAX) ?? 1);
+            return route('souvenirs', [
+                'danh_muc' => $categoryId,
+                'sap_xep' => $sort,
+                'trang' => $page,
+                'msg' => $message,
+            ]);
+        }
+        return route('giohang', ['msg' => $message]);
     }
 
     private function khongTimThay(string $thongBao = 'Trang bạn tìm không tồn tại.'): void

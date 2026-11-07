@@ -12,7 +12,7 @@ Q1–Q9 dành cho giảng viên. Mỗi mục nêu: câu hỏi, mặc định đ�
 | Q1 | "Hai mức tích hợp API" nghĩa là gì? | Mức 1: PHP gọi API ngoài trực tiếp. Mức 2: web service JSON do ứng dụng tự cung cấp cho AJAX | Đã làm cả hai |
 | Q2 | Có được thêm chương Kiểm thử và Kết luận không? | Kiểm thử đặt trong Phụ lục, Kết luận 1 trang cuối Chương 6 | Dùng khi viết báo cáo |
 | Q3 | Mục 1.1 "Thương mại điện tử" có phải đổi theo đề tài? | Giữ tên mục, viết ngắn về dịch vụ thông tin số trực tuyến, nối sang đề tài | Dùng khi viết báo cáo |
-| Q4 | Chương 3 và 6 của mẫu là giỏ hàng/đặt hàng/thêm sản phẩm, có thay bằng chức năng tương đương? | Có, thay như bảng ở mục 4 đề cương | Áp dụng (không có giỏ hàng) |
+| Q4 | Chương 3 và 6 của mẫu là giỏ hàng/đặt hàng/thêm sản phẩm, có thay bằng chức năng tương đương? | Có giỏ hàng lưu niệm cho tài khoản hoạt động; chưa triển khai đặt hàng/thanh toán | Đã cập nhật theo phạm vi mới |
 | Q5 | 65 trang tính cả bìa, mục lục, phụ lục, tài liệu tham khảo không? | Tính tất cả (cách an toàn nhất) | Dùng khi viết báo cáo |
 | Q6 | Làm cá nhân hay nhóm? | Chưa biết, xem mục 9 | Dùng khi viết báo cáo |
 | Q7 | Cho phép gọi API ngoài từ trình duyệt hay chỉ qua máy chủ? | Chỉ qua máy chủ, vì key không được lộ ra trình duyệt | Đã làm |
@@ -48,15 +48,14 @@ Q1–Q9 dành cho giảng viên. Mỗi mục nêu: câu hỏi, mặc định đ�
   chỉ lưu tiêu đề/sapo/ảnh/link để dẫn nguồn (không sao chép toàn bài); có thể bấm "Cào tin VnExpress"
   ở khu quản trị. Giới hạn theo `ttl_news` (mặc định 3 giờ).
 
-### Q4 — Không dùng giỏ hàng/đặt hàng (áp dụng)
-- Đã **loại bỏ** giỏ hàng/đơn hàng khỏi đồ án; thay bằng: trang chi tiết trận (tương đương trang chi
-  tiết sản phẩm), lịch + lọc (tương đương trang tìm kiếm), đội yêu thích + quản trị (tương đương
-  giỏ hàng), và quy trình đồng bộ dữ liệu từ API (tương đương quy trình đặt hàng).
-- Bảng/routine liên quan giỏ hàng **không tồn tại** trong `database/schema.sql` và
-  `database/routines.sql`.
+### Q4 — Giỏ hàng lưu niệm, chưa đặt hàng/thanh toán
+- Tài khoản đang hoạt động (USER hoặc ADMIN) có thể thêm, cập nhật và xóa sản phẩm trong giỏ; giỏ giới hạn 20 dòng và số lượng 1–10 mỗi sản phẩm.
+- Giá luôn đọc từ sản phẩm hiện tại; mặt hàng bị ẩn hoặc hết hàng vẫn được giữ lại nhưng không tính vào tổng.
+- Không triển khai đặt hàng, thanh toán hoặc tồn kho theo số lượng.
+- Cấu trúc và nghiệp vụ giỏ hàng nằm trong `database/schema.sql`, `database/routines.sql` và `database/migrations/004_cart.sql`.
 
 ## Ảnh hưởng tới báo cáo (T14)
-- Chương 3 dùng 5 trang: Trang chủ, Chi tiết trận, Lịch thi đấu, Đội yêu thích, Quản trị.
+- Chương 3 dùng các trang: Trang chủ, Chi tiết trận, Lịch thi đấu, Đội yêu thích, Lưu niệm/giỏ hàng, Quản trị.
 - Chương 6 dùng 4 quy trình: đồng bộ API, đăng ký, đăng nhập, lưu đội yêu thích.
 - Mục 1.1 giữ tên "Thương mại điện tử" nhưng viết về dịch vụ thông tin số trực tuyến.
 - Kiểm thử để trong Phụ lục; Kết luận ở cuối Chương 6.

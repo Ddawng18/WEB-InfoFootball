@@ -249,6 +249,22 @@ CREATE TABLE san_pham_luu_niem (
     CONSTRAINT fk_spln_danh_muc FOREIGN KEY (ma_danh_muc) REFERENCES danh_muc_luu_niem (ma)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE gio_hang (
+    ma BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    tai_khoan_id INT UNSIGNED NOT NULL,
+    ma_san_pham INT UNSIGNED NOT NULL,
+    so_luong TINYINT UNSIGNED NOT NULL,
+    ngay_them DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (ma),
+    UNIQUE KEY uq_gio_hang_tai_khoan_san_pham (tai_khoan_id, ma_san_pham),
+    KEY idx_gio_hang_san_pham (ma_san_pham),
+    CONSTRAINT fk_gio_hang_tai_khoan FOREIGN KEY (tai_khoan_id) REFERENCES tai_khoan (tai_khoan_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_gio_hang_san_pham FOREIGN KEY (ma_san_pham) REFERENCES san_pham_luu_niem (ma)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE lich_su_gia_luu_niem (
     ma BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     ma_san_pham INT UNSIGNED NOT NULL,
