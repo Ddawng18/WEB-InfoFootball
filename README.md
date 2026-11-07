@@ -33,7 +33,7 @@ quản trị) tích hợp **Live Score API bên ngoài** đồng bộ vào **MyS
    > Nếu CSDL đã tạo từ trước và bạn không muốn import lại, chạy thêm migration:
    > `mysql -u root fastfootbalinfo < database/migrations/001_news_crawl.sql` rồi chạy lại `database/routines.sql`.
    > Để bổ sung mục Lưu niệm và giỏ hàng trên CSDL hiện có, chạy lần lượt migration `002_souvenirs.sql`, `003_souvenirs_admin.sql`, `004_cart.sql`, rồi chạy lại `database/routines.sql` bằng `utf8mb4`.
-4. **Truy cập**: `http://localhost/fastfootbalinfo/`.
+4. **Truy cập**: `http://localhost/WEB-InfoFootball`.
 
 ## 3. Tài khoản mẫu
 
