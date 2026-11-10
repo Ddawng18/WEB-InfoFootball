@@ -1,43 +1,43 @@
- /* ============================================================================
-    FastFootBalInfo — bảng tỉ số (tông màu cũ: header tối + đờ)
-    Nờn tảng: Bootstrap 5.3. Bổ sung lớp trình bày, không đổi chức năng.
-    ============================================================================ */
- 
- /* ---------------------------------------------------------------- 1. Tokens */
- :root {
-     /* ĝờ sân cờ, than đậm và vàng đồng */
-     --as-ink: #191719;
-     --as-ink-2: #302b2d;
-     --as-bg: #f5f3f0;
-     --as-panel: #ffffff;
-     --as-head: #f1eeeb;
-     --as-line: #e5dfdc;
-     --as-muted: #716a69;
-     --as-muted-2: #958d8a;
-     --as-red: #c8102e;
-     --as-red-2: #9f0c25;
-     --as-gold: #d5b15b;
-     --as-green: #1f9d55;
-     --as-amber: #d9a534;
- 
-     --as-radius: 12px;
-     --as-radius-sm: 8px;
-     --as-shadow: 0 2px 8px rgba(31, 20, 22, .045);
-     --as-shadow-md: 0 14px 34px rgba(31, 20, 22, .12);
-     --as-transition: .22s cubic-bezier(.2, .7, .3, 1);
-     --as-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-     --as-header-h: 72px;
- 
-     /* alias cho component cũ */
-     --ff-ink: var(--as-ink);
-     --ff-ink-3: var(--as-ink-2);
-     --ff-muted: var(--as-muted);
-     --ff-muted-2: var(--as-muted-2);
-     --ff-line: var(--as-line);
-     --ff-red: var(--as-red);
-     --ff-blue: #4f74d8;
-     --ff-green: var(--as-green);
-     --ff-amber: var(--as-amber);
+/* ============================================================================
+   FastFootBalInfo — bảng tỉ số (tông màu cũ: header tối + đờ)
+   Nờn tảng: Bootstrap 5.3. Bổ sung lớp trình bày, không đổi chức năng.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- 1. Tokens */
+:root {
+    /* ĝờ sân cờ, than đậm và vàng đồng */
+    --as-ink: #191719;
+    --as-ink-2: #302b2d;
+    --as-bg: #f5f3f0;
+    --as-panel: #ffffff;
+    --as-head: #f1eeeb;
+    --as-line: #e5dfdc;
+    --as-muted: #716a69;
+    --as-muted-2: #958d8a;
+    --as-red: #c8102e;
+    --as-red-2: #9f0c25;
+    --as-gold: #d5b15b;
+    --as-green: #1f9d55;
+    --as-amber: #d9a534;
+
+    --as-radius: 12px;
+    --as-radius-sm: 8px;
+    --as-shadow: 0 2px 8px rgba(31, 20, 22, .045);
+    --as-shadow-md: 0 14px 34px rgba(31, 20, 22, .12);
+    --as-transition: .22s cubic-bezier(.2, .7, .3, 1);
+    --as-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --as-header-h: 72px;
+
+    /* alias cho component cũ */
+    --ff-ink: var(--as-ink);
+    --ff-ink-3: var(--as-ink-2);
+    --ff-muted: var(--as-muted);
+    --ff-muted-2: var(--as-muted-2);
+    --ff-line: var(--as-line);
+    --ff-red: var(--as-red);
+    --ff-blue: #4f74d8;
+    --ff-green: var(--as-green);
+    --ff-amber: var(--as-amber);
     --ff-radius: var(--as-radius);
     --ff-radius-sm: var(--as-radius-sm);
     --ff-shadow-sm: var(--as-shadow);
@@ -599,7 +599,7 @@ body.shop-body .as-wrap { max-width:1240px; }
     .calendar-item__teams { font-size:.8rem; }
 }
 .match-actions .ffbi-match-action { min-height:38px; padding:.5rem .9rem; font-size:.82rem; border-radius:9px; }
-/* N�t nh?c/l?ch trong danh s�ch tr?n s?p di?n ra */
+/* N�t nh?c/l?ch trong danh s�ch tr?n s?p di?n ra */
 .as-row { grid-template-columns:92px minmax(0,1fr) 104px minmax(0,1fr) 92px 58px; }
 .as-actions { display:flex; align-items:center; justify-content:flex-end; gap:.25rem; }
 .as-mini { display:grid; place-items:center; width:26px; height:26px; padding:0; border:1px solid var(--as-line); border-radius:7px; background:#fff; color:var(--as-muted); font-size:.8rem; cursor:pointer; transition:all .15s ease; }
