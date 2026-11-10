@@ -1,267 +1,267 @@
-<?php
-declare(strict_types=1);
-
-namespace App\Services;
-
-use App\Core\Config;
-
-/**
- * Nguồn dữ liệu: ESPN public scoreboard API (không cần key/tài khoản).
- *
- * Endpoint: https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard?dates=YYYYMMDD
- * - Không có API key nên không có cơ chế suspend tài khoản do nhiều IP.
- * - Là API không chính thức: có thể đổi/rate-limit; chỉ gọi từ server, có TTL/cache.
- * - fetchLive(): lấy trận hôm nay, gồm cả trạng thái đang đá.
- * - fetchFixtures(null): lấy hôm nay + 2 cuối tuần kế tiếp để có trận sắp đá.
- */
-final class EspnClient implements FootballDataProvider
-{
-    private const NGUON = 'ESPN';
-
-    /** @var array<string, array{0:string,1:string}> slug => [tên giải, quốc gia/khu vực] */
-    private const LEAGUE_MAP = [
-        'eng.1' => ['Premier League', 'England'],
-        'eng.2' => ['Championship', 'England'],
-        'eng.fa' => ['FA Cup', 'England'],
-        'esp.1' => ['La Liga', 'Spain'],
-        'esp.copa_del_rey' => ['Copa del Rey', 'Spain'],
-        'ita.1' => ['Serie A', 'Italy'],
-        'ita.coppa_italia' => ['Coppa Italia', 'Italy'],
-        'ger.1' => ['Bundesliga', 'Germany'],
-        'ger.dfb_pokal' => ['DFB Pokal', 'Germany'],
-        'fra.1' => ['Ligue 1', 'France'],
-        'fra.coupe_de_france' => ['Coupe de France', 'France'],
-        'uefa.champions' => ['UEFA Champions League', 'Europe'],
-        'uefa.europa' => ['UEFA Europa League', 'Europe'],
-        'uefa.europa.conf' => ['UEFA Conference League', 'Europe'],
-        'uefa.wchampions' => ["UEFA Women's Champions League", 'Europe'],
-        'mex.w.1' => ['Liga MX Femenil', 'Mexico'],
-        'fifa.friendly.w' => ['International Women Friendlies', 'World'],
-        'ned.1' => ['Eredivisie', 'Netherlands'],
-        'por.1' => ['Primeira Liga', 'Portugal'],
-        'bra.1' => ['Brasileirão Série A', 'Brazil'],
-        'arg.1' => ['Liga Profesional', 'Argentina'],
-        'usa.1' => ['MLS', 'USA'],
-        'mex.1' => ['Liga MX', 'Mexico'],
-        'jpn.1' => ['J1 League', 'Japan'],
-        'kor.1' => ['K League 1', 'South Korea'],
-        'vie.1' => ['V.League 1', 'Vietnam'],
-        'sco.1' => ['Scottish Premiership', 'Scotland'],
-        'tur.1' => ['Süper Lig', 'Turkey'],
-        'bel.1' => ['Pro League', 'Belgium'],
-        'aut.1' => ['Bundesliga', 'Austria'],
-        'sui.1' => ['Super League', 'Switzerland'],
-        'den.1' => ['Superliga', 'Denmark'],
-        'swe.1' => ['Allsvenskan', 'Sweden'],
-        'nor.1' => ['Eliteserien', 'Norway'],
-        'gre.1' => ['Super League', 'Greece'],
-        'sau.1' => ['Saudi Pro League', 'Saudi Arabia'],
-        'chn.1' => ['Chinese Super League', 'China'],
-        'aus.1' => ['A-League', 'Australia'],
-    ];
-
-    private string $baseUrl;
-    private string $guideUrl;
-    /** @var string[] */
-    private array $leagues;
-    private int $delayMs;
-
-    /**
-     * @param string[]|null $leagues
-     */
-    public function __construct(?string $baseUrl = null, ?array $leagues = null, ?int $delayMs = null, ?string $guideUrl = null)
-    {
-        $base = trim($baseUrl ?? Config::string('api', 'espn_base_url', 'https://site.api.espn.com/apis/site/v2/sports/soccer'));
-        if ($base === '') {
-            $base = 'https://site.api.espn.com/apis/site/v2/sports/soccer';
-        }
-        $this->baseUrl = rtrim($base, '/');
-
-        $raw = $leagues ?? array_map('trim', explode(',', Config::string(
-            'api',
-            'espn_leagues',
-            'eng.1,esp.1,ita.1,ger.1,fra.1,uefa.champions,uefa.wchampions,esp.copa_del_rey,mex.w.1,fifa.friendly.w'
-        )));
-        $this->leagues = array_values(array_filter(array_map('trim', $raw), static fn (string $s): bool => $s !== ''));
-        $this->delayMs = max(0, $delayMs ?? Config::int('api', 'espn_request_delay_ms', 150));
-        $this->guideUrl = trim($guideUrl ?? Config::string(
-            'api',
-            'espn_guide_url',
-            'https://site.web.api.espn.com/apis/personalized/site/v2/guide/feed?limit=200'
-        ));
-        if ($this->guideUrl === '') {
-            $this->guideUrl = 'https://site.web.api.espn.com/apis/personalized/site/v2/guide/feed?limit=200';
-        }
-    }
-
-    public function name(): string
-    {
-        return self::NGUON;
-    }
-
-    public function fetchLive(): array
-    {
-        // Đầu ngày UTC: trận đá muộn hôm qua vẫn có thể đang diễn ra.
-        $dates = [gmdate('Y-m-d')];
-        if ((int) gmdate('G') < 6) {
-            $dates[] = gmdate('Y-m-d', time() - 86400);
-        }
-
-        // Gộp guide feed và scoreboard các giải vào cùng một đợt tải song song.
-        $requests = ['guide' => $this->guideUrl];
-        foreach ($dates as $date) {
-            $requests += $this->buildDateRequests($date);
-        }
-        $responses = $this->getMany($requests);
-
-        $bundle = $this->rong();
-        $part = $this->rong();
-        $json = $responses['guide'] ?? [];
-
-        foreach (($json['events'] ?? []) as $event) {
-            if (!is_array($event)) {
-                continue;
-            }
-            $sport = $event['sport'] ?? '';
-            if (is_array($sport)) {
-                $sport = (string) ($sport['slug'] ?? '');
-            }
-            if (strtolower((string) $sport) !== 'soccer') {
-                continue;
-            }
-            $this->mapEvent($event, '', $part);
-        }
-
-        $this->gop($bundle, $part);
-
-        // Bổ sung scoreboard từng giải để cập nhật cả các giải không nằm trong
-        // guide feed (friendly nữ, Liga MX...) khi ESPN đổi trạng thái/tỉ số.
-        foreach ($dates as $date) {
-            $this->gop($bundle, $this->parseDateResponses($date, $responses));
-        }
-
-        $this->boSungLiveCoverage($bundle);
-
-        return $bundle;
-    }
-
-    /**
-     * Kiểm tra cờ liveAvailable của ESPN cho các trận đã quá giờ nhưng scoreboard
-     * vẫn báo SAP_DIEN_RA. Summary cũng có thể trả trạng thái/tỉ số mới hơn.
-     *
-     * @param array<string, array<int, array<string, mixed>>> $bundle
-     */
-    private function boSungLiveCoverage(array &$bundle): void
-    {
-        $now = time();
-        $ids = [];
-        foreach ($bundle['matches'] as $m) {
-            if (($m['trang_thai'] ?? '') !== 'SAP_DIEN_RA') {
-                continue;
-            }
-            $batDau = strtotime((string) ($m['thoi_gian_utc'] ?? '') . ' UTC');
-            if ($batDau === false || $batDau > $now - 300 || $batDau < $now - 4 * 3600) {
-                continue;
-            }
-            $id = (string) ($m['ma'] ?? '');
-            if ($id !== '') {
-                $ids[$id] = true;
-            }
-        }
-        $ids = array_map('strval', array_slice(array_keys($ids), 0, 10));
-        if ($ids === []) {
-            return;
-        }
-
-        $requests = [];
-        foreach ($ids as $id) {
-            $requests[$id] = $this->buildUrl('all/summary', ['event' => $id]);
-        }
-        $responses = $this->getMany($requests, 10, 8);
-
-        foreach ($ids as $id) {
-            $competition = $responses[$id]['header']['competitions'][0] ?? null;
-            if (!is_array($competition)) {
-                continue;
-            }
-            $coLive = isset($competition['liveAvailable']) ? (int) (bool) $competition['liveAvailable'] : null;
-            $status = is_array($competition['status'] ?? null) ? $competition['status'] : [];
-            $type = is_array($status['type'] ?? null) ? $status['type'] : [];
-            $state = strtolower((string) ($type['state'] ?? ''));
-            $typeName = strtoupper((string) ($type['name'] ?? ''));
-            $moiTrangThai = $this->mapStatus($state, $typeName);
-
-            $phut = 0;
-            if ($state === 'in') {
-                $clock = $status['clock'] ?? null;
-                if (is_numeric($clock)) {
-                    $phut = (int) floor(((int) $clock) / 60);
-                } elseif (preg_match('/^(\d+)/', (string) ($status['displayClock'] ?? ''), $m) === 1) {
-                    $phut = (int) $m[1];
-                }
-            }
-
-            $tiSoNha = null;
-            $tiSoKhach = null;
-            foreach (($competition['competitors'] ?? []) as $competitor) {
-                if (!is_array($competitor)) {
-                    continue;
-                }
-                $side = (string) ($competitor['homeAway'] ?? '');
-                if ($side === 'home') {
-                    $tiSoNha = (int) ($competitor['score'] ?? 0);
-                } elseif ($side === 'away') {
-                    $tiSoKhach = (int) ($competitor['score'] ?? 0);
-                }
-            }
-
-            foreach ($bundle['matches'] as &$m) {
-                if ((string) ($m['ma'] ?? '') !== $id) {
-                    continue;
-                }
-                if ($coLive !== null) {
-                    $m['co_live'] = $coLive;
-                }
-                if ($state === 'in' || $state === 'post') {
-                    $m['trang_thai'] = $moiTrangThai;
-                    $m['phut'] = $phut;
-                    if ($tiSoNha !== null && $tiSoKhach !== null) {
-                        $m['ti_so_nha'] = $tiSoNha;
-                        $m['ti_so_khach'] = $tiSoKhach;
-                    }
-                }
-            }
-            unset($m);
-        }
-    }
-
-    public function fetchFixtures(?string $date = null): array
-    {
-        if ($date !== null && $date !== '') {
-            return $this->layNgay($date);
-        }
-
-        $dates = $this->dates();
-        $requests = [];
-        foreach ($dates as $d) {
-            $requests += $this->buildDateRequests($d);
-        }
-        $responses = $this->getMany($requests);
-        $bundle = $this->rong();
-        foreach ($dates as $d) {
-            $this->gop($bundle, $this->parseDateResponses($d, $responses));
-        }
-        return $bundle;
-    }
-
-    public function fetchLeagues(): array
-    {
-        $bundle = $this->rong();
-        $seenCountries = [];
-        foreach ($this->leagues as $slug) {
-            [$ten, $quocGia] = $this->tenGiai($slug);
-            if ($quocGia !== '' && !isset($seenCountries[$quocGia])) {
-                $seenCountries[$quocGia] = true;
+ <?php
+ declare(strict_types=1);
+ 
+ namespace App\Services;
+ 
+ use App\Core\Config;
+ 
+ /**
+  * Nguồn dữ liệu: ESPN public scoreboard API (không cần key/tài khoản).
+  *
+  * Endpoint: https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard?dates=YYYYMMDD
+  * - Không có API key nên không có cơ chế suspend tài khoản do nhiều IP.
+  * - Là API không chính thức: có thể đổi/rate-limit; chỉ gọi từ server, có TTL/cache.
+  * - fetchLive(): lấy trận hôm nay, gồm cả trạng thái đang đá.
+  * - fetchFixtures(null): lấy hôm nay + 2 cuối tuần kế tiếp để có trận sắp đá.
+  */
+ final class EspnClient implements FootballDataProvider
+ {
+     private const NGUON = 'ESPN';
+ 
+     /** @var array<string, array{0:string,1:string}> slug => [tên giải, quốc gia/khu vực] */
+     private const LEAGUE_MAP = [
+         'eng.1' => ['Premier League', 'England'],
+         'eng.2' => ['Championship', 'England'],
+         'eng.fa' => ['FA Cup', 'England'],
+         'esp.1' => ['La Liga', 'Spain'],
+         'esp.copa_del_rey' => ['Copa del Rey', 'Spain'],
+         'ita.1' => ['Serie A', 'Italy'],
+         'ita.coppa_italia' => ['Coppa Italia', 'Italy'],
+         'ger.1' => ['Bundesliga', 'Germany'],
+         'ger.dfb_pokal' => ['DFB Pokal', 'Germany'],
+         'fra.1' => ['Ligue 1', 'France'],
+         'fra.coupe_de_france' => ['Coupe de France', 'France'],
+         'uefa.champions' => ['UEFA Champions League', 'Europe'],
+         'uefa.europa' => ['UEFA Europa League', 'Europe'],
+         'uefa.europa.conf' => ['UEFA Conference League', 'Europe'],
+         'uefa.wchampions' => ["UEFA Women's Champions League", 'Europe'],
+         'mex.w.1' => ['Liga MX Femenil', 'Mexico'],
+         'fifa.friendly.w' => ['International Women Friendlies', 'World'],
+         'ned.1' => ['Eredivisie', 'Netherlands'],
+         'por.1' => ['Primeira Liga', 'Portugal'],
+         'bra.1' => ['Brasileirão Série A', 'Brazil'],
+         'arg.1' => ['Liga Profesional', 'Argentina'],
+         'usa.1' => ['MLS', 'USA'],
+         'mex.1' => ['Liga MX', 'Mexico'],
+         'jpn.1' => ['J1 League', 'Japan'],
+         'kor.1' => ['K League 1', 'South Korea'],
+         'vie.1' => ['V.League 1', 'Vietnam'],
+         'sco.1' => ['Scottish Premiership', 'Scotland'],
+         'tur.1' => ['Süper Lig', 'Turkey'],
+         'bel.1' => ['Pro League', 'Belgium'],
+         'aut.1' => ['Bundesliga', 'Austria'],
+         'sui.1' => ['Super League', 'Switzerland'],
+         'den.1' => ['Superliga', 'Denmark'],
+         'swe.1' => ['Allsvenskan', 'Sweden'],
+         'nor.1' => ['Eliteserien', 'Norway'],
+         'gre.1' => ['Super League', 'Greece'],
+         'sau.1' => ['Saudi Pro League', 'Saudi Arabia'],
+         'chn.1' => ['Chinese Super League', 'China'],
+         'aus.1' => ['A-League', 'Australia'],
+     ];
+ 
+     private string $baseUrl;
+     private string $guideUrl;
+     /** @var string[] */
+     private array $leagues;
+     private int $delayMs;
+ 
+     /**
+      * @param string[]|null $leagues
+      */
+     public function __construct(?string $baseUrl = null, ?array $leagues = null, ?int $delayMs = null, ?string $guideUrl = null)
+     {
+         $base = trim($baseUrl ?? Config::string('api', 'espn_base_url', 'https://site.api.espn.com/apis/site/v2/sports/soccer'));
+         if ($base === '') {
+             $base = 'https://site.api.espn.com/apis/site/v2/sports/soccer';
+         }
+         $this->baseUrl = rtrim($base, '/');
+ 
+         $raw = $leagues ?? array_map('trim', explode(',', Config::string(
+             'api',
+             'espn_leagues',
+             'eng.1,esp.1,ita.1,ger.1,fra.1,uefa.champions,uefa.wchampions,esp.copa_del_rey,mex.w.1,fifa.friendly.w'
+         )));
+         $this->leagues = array_values(array_filter(array_map('trim', $raw), static fn (string $s): bool => $s !== ''));
+         $this->delayMs = max(0, $delayMs ?? Config::int('api', 'espn_request_delay_ms', 150));
+         $this->guideUrl = trim($guideUrl ?? Config::string(
+             'api',
+             'espn_guide_url',
+             'https://site.web.api.espn.com/apis/personalized/site/v2/guide/feed?limit=200'
+         ));
+         if ($this->guideUrl === '') {
+             $this->guideUrl = 'https://site.web.api.espn.com/apis/personalized/site/v2/guide/feed?limit=200';
+         }
+     }
+ 
+     public function name(): string
+     {
+         return self::NGUON;
+     }
+ 
+     public function fetchLive(): array
+     {
+         // Đầu ngày UTC: trận đá muộn hôm qua vẫn có thể đang diễn ra.
+         $dates = [gmdate('Y-m-d')];
+         if ((int) gmdate('G') < 6) {
+             $dates[] = gmdate('Y-m-d', time() - 86400);
+         }
+ 
+         // Gộp guide feed và scoreboard các giải vào cùng một đợt tải song song.
+         $requests = ['guide' => $this->guideUrl];
+         foreach ($dates as $date) {
+             $requests += $this->buildDateRequests($date);
+         }
+         $responses = $this->getMany($requests);
+ 
+         $bundle = $this->rong();
+         $part = $this->rong();
+         $json = $responses['guide'] ?? [];
+ 
+         foreach (($json['events'] ?? []) as $event) {
+             if (!is_array($event)) {
+                 continue;
+             }
+             $sport = $event['sport'] ?? '';
+             if (is_array($sport)) {
+                 $sport = (string) ($sport['slug'] ?? '');
+             }
+             if (strtolower((string) $sport) !== 'soccer') {
+                 continue;
+             }
+             $this->mapEvent($event, '', $part);
+         }
+ 
+         $this->gop($bundle, $part);
+ 
+         // Bổ sung scoreboard từng giải để cập nhật cả các giải không nằm trong
+         // guide feed (friendly nữ, Liga MX...) khi ESPN đổi trạng thái/tỉ số.
+         foreach ($dates as $date) {
+             $this->gop($bundle, $this->parseDateResponses($date, $responses));
+         }
+ 
+         $this->boSungLiveCoverage($bundle);
+ 
+         return $bundle;
+     }
+ 
+     /**
+      * Kiểm tra cờ liveAvailable của ESPN cho các trận đã quá giờ nhưng scoreboard
+      * vẫn báo SAP_DIEN_RA. Summary cũng có thể trả trạng thái/tỉ số mới hơn.
+      *
+      * @param array<string, array<int, array<string, mixed>>> $bundle
+      */
+     private function boSungLiveCoverage(array &$bundle): void
+     {
+         $now = time();
+         $ids = [];
+         foreach ($bundle['matches'] as $m) {
+             if (($m['trang_thai'] ?? '') !== 'SAP_DIEN_RA') {
+                 continue;
+             }
+             $batDau = strtotime((string) ($m['thoi_gian_utc'] ?? '') . ' UTC');
+             if ($batDau === false || $batDau > $now - 300 || $batDau < $now - 4 * 3600) {
+                 continue;
+             }
+             $id = (string) ($m['ma'] ?? '');
+             if ($id !== '') {
+                 $ids[$id] = true;
+             }
+         }
+         $ids = array_map('strval', array_slice(array_keys($ids), 0, 10));
+         if ($ids === []) {
+             return;
+         }
+ 
+         $requests = [];
+         foreach ($ids as $id) {
+             $requests[$id] = $this->buildUrl('all/summary', ['event' => $id]);
+         }
+         $responses = $this->getMany($requests, 10, 8);
+ 
+         foreach ($ids as $id) {
+             $competition = $responses[$id]['header']['competitions'][0] ?? null;
+             if (!is_array($competition)) {
+                 continue;
+             }
+             $coLive = isset($competition['liveAvailable']) ? (int) (bool) $competition['liveAvailable'] : null;
+             $status = is_array($competition['status'] ?? null) ? $competition['status'] : [];
+             $type = is_array($status['type'] ?? null) ? $status['type'] : [];
+             $state = strtolower((string) ($type['state'] ?? ''));
+             $typeName = strtoupper((string) ($type['name'] ?? ''));
+             $moiTrangThai = $this->mapStatus($state, $typeName);
+ 
+             $phut = 0;
+             if ($state === 'in') {
+                 $clock = $status['clock'] ?? null;
+                 if (is_numeric($clock)) {
+                     $phut = (int) floor(((int) $clock) / 60);
+                 } elseif (preg_match('/^(\d+)/', (string) ($status['displayClock'] ?? ''), $m) === 1) {
+                     $phut = (int) $m[1];
+                 }
+             }
+ 
+             $tiSoNha = null;
+             $tiSoKhach = null;
+             foreach (($competition['competitors'] ?? []) as $competitor) {
+                 if (!is_array($competitor)) {
+                     continue;
+                 }
+                 $side = (string) ($competitor['homeAway'] ?? '');
+                 if ($side === 'home') {
+                     $tiSoNha = (int) ($competitor['score'] ?? 0);
+                 } elseif ($side === 'away') {
+                     $tiSoKhach = (int) ($competitor['score'] ?? 0);
+                 }
+             }
+ 
+             foreach ($bundle['matches'] as &$m) {
+                 if ((string) ($m['ma'] ?? '') !== $id) {
+                     continue;
+                 }
+                 if ($coLive !== null) {
+                     $m['co_live'] = $coLive;
+                 }
+                 if ($state === 'in' || $state === 'post') {
+                     $m['trang_thai'] = $moiTrangThai;
+                     $m['phut'] = $phut;
+                     if ($tiSoNha !== null && $tiSoKhach !== null) {
+                         $m['ti_so_nha'] = $tiSoNha;
+                         $m['ti_so_khach'] = $tiSoKhach;
+                     }
+                 }
+             }
+             unset($m);
+         }
+     }
+ 
+     public function fetchFixtures(?string $date = null): array
+     {
+         if ($date !== null && $date !== '') {
+             return $this->layNgay($date);
+         }
+ 
+         $dates = $this->dates();
+         $requests = [];
+         foreach ($dates as $d) {
+             $requests += $this->buildDateRequests($d);
+         }
+         $responses = $this->getMany($requests);
+         $bundle = $this->rong();
+         foreach ($dates as $d) {
+             $this->gop($bundle, $this->parseDateResponses($d, $responses));
+         }
+         return $bundle;
+     }
+ 
+     public function fetchLeagues(): array
+     {
+         $bundle = $this->rong();
+         $seenCountries = [];
+         foreach ($this->leagues as $slug) {
+             [$ten, $quocGia] = $this->tenGiai($slug);
+             if ($quocGia !== '' && !isset($seenCountries[$quocGia])) {
+                 $seenCountries[$quocGia] = true;
                 $bundle['countries'][] = ['ma' => $quocGia, 'ten' => $quocGia];
             }
             $bundle['leagues'][] = [
