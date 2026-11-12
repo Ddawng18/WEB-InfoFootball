@@ -65,6 +65,46 @@ final class SyncRepository extends BaseRepository
         return $this->call(RoutineName::DS_NHAT_KY_DONG_BO, [$gioiHan]);
     }
 
+    /**
+     * Trận còn trạng thái chưa kết thúc nhưng đã quá giờ bóng lăn.
+     * Đây là các trận có thể đã rơi khỏi guide feed/scoreboard (server gián đoạn,
+     * giải không nằm trong espn_leagues) nên cần đối soát lại bằng summary.
+     *
+     * @return array<int, string> mã API của trận (ma_api)
+     */
+    public function tranQuaHan(int $gioiHan = 20): array
+    {
+        $now = time();
+        $tu = gmdate('Y-m-d H:i:s', $now - 7 * 86400);
+        $filters = [
+            ['DANG_DA', 3 * 3600],
+            ['NGHI_GIUA_HIEP', 3 * 3600],
+            ['SAP_DIEN_RA', 4 * 3600],
+        ];
+
+        $ids = [];
+        foreach ($filters as [$trangThai, $giay]) {
+            $den = gmdate('Y-m-d H:i:s', $now - $giay);
+            $rows = $this->call(RoutineName::DS_TRAN_DAU, [
+                $tu, $den, null, null, $trangThai, null, $gioiHan, 0, null, 'DESC',
+            ]);
+            foreach ($rows as $row) {
+                $ma = trim((string) ($row['ma_api'] ?? ''));
+                if ($ma === '') {
+                    continue;
+                }
+                // Bỏ qua trận vừa được đối soát gần đây để tránh gọi nguồn liên tục.
+                $capNhat = strtotime((string) ($row['cap_nhat_luc'] ?? '') . ' UTC');
+                if ($capNhat !== false && $capNhat > $now - 600) {
+                    continue;
+                }
+                $ids[$ma] = true;
+            }
+        }
+
+        return array_map('strval', array_slice(array_keys($ids), 0, $gioiHan));
+    }
+
     public function cauHinhGiaiDau(int $id, bool $theoDoi, ?int $quocGiaId, ?string $khuVuc): string
     {
         return $this->callMa(RoutineName::ADMIN_CAU_HINH_GIAI_DAU, [$id, $theoDoi ? 1 : 0, $quocGiaId, $khuVuc]);

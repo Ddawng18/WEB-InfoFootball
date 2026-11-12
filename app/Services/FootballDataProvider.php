@@ -25,6 +25,16 @@ interface FootballDataProvider
     /** @return array<string, array<int, array<string, mixed>>> */
     public function fetchFixtures(?string $date = null): array;
 
+    /**
+     * Lấy trạng thái/tỉ số hiện tại cho các trận đã lưu theo mã API.
+     * Dùng khi trận đã rơi khỏi guide feed/scoreboard (server gián đoạn,
+     * giải không nằm trong danh sách cấu hình...) nhưng vẫn còn trạng thái cũ.
+     *
+     * @param string[] $ids
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    public function fetchMatchesByIds(array $ids): array;
+
     /** @return array<string, array<int, array<string, mixed>>> */
     public function fetchLeagues(): array;
 

@@ -63,6 +63,15 @@ final class SyncService
             $bundle = $this->lay($loai);
             $coDuLieu = $this->coDuLieu($bundle);
             $thongKe = $this->ghiVaoDb($bundle);
+            if (in_array($loai, ['LIVE', 'FIXTURES'], true)) {
+                try {
+                    $boSung = $this->doiSoatQuaHan();
+                    $thongKe['so_ban_ghi'] += $boSung['so_ban_ghi'];
+                    $thongKe['so_bo_qua'] += $boSung['so_bo_qua'];
+                } catch (\Throwable $e) {
+                    error_log('Đối soát trận quá hạn lỗi: ' . $e->getMessage());
+                }
+            }
         } catch (\Throwable $e) {
             $this->repo->ketThuc($nhatKyId, 'LOI', 0, 0, mb_substr($e->getMessage(), 0, 400, 'UTF-8'));
             return ['ma' => 'LOI', 'loai' => $loai, 'nhat_ky_id' => $nhatKyId,
@@ -94,6 +103,22 @@ final class SyncService
             'FIXTURES' => $this->provider->fetchFixtures(null),
             default => $this->provider->fetchLeagues(),
         };
+    }
+
+    /**
+     * Cứu các trận bị kẹt trạng thái khi nguồn/ server gián đoạn: trận đã qua
+     * giờ nhưng vẫn SAP_DIEN_RA/DANG_DA và đã rơi khỏi guide feed/scoreboard.
+     * Lấy lại trạng thái + tỉ số bằng summary theo event ID.
+     *
+     * @return array{so_ban_ghi:int, so_bo_qua:int}
+     */
+    private function doiSoatQuaHan(): array
+    {
+        $ids = $this->repo->tranQuaHan();
+        if ($ids === []) {
+            return ['so_ban_ghi' => 0, 'so_bo_qua' => 0];
+        }
+        return $this->ghiVaoDb($this->provider->fetchMatchesByIds($ids));
     }
 
     /**

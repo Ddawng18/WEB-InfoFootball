@@ -254,6 +254,103 @@ final class EspnClient implements FootballDataProvider
         return $bundle;
     }
 
+    /**
+     * Đối soát trạng thái/tỉ số cho các trận đã lưu nhưng không còn nằm trong
+     * guide feed hoặc scoreboard của các giải cấu hình. Summary theo event ID
+     * hoạt động cho mọi giải của ESPN nên lấy được cả trận của giải chưa khai báo.
+     *
+     * @param string[] $ids
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    public function fetchMatchesByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('strval', $ids),
+            static fn (string $id): bool => preg_match('/^\d+$/', $id) === 1
+        )));
+        $bundle = $this->rong();
+        if ($ids === []) {
+            return $bundle;
+        }
+
+        $requests = [];
+        foreach ($ids as $id) {
+            $requests[$id] = $this->buildUrl('all/summary', ['event' => $id]);
+        }
+        $responses = $this->getMany($requests, 6, 12);
+
+        foreach ($ids as $id) {
+            $json = $responses[$id] ?? [];
+            $competition = $json['header']['competitions'][0] ?? null;
+            if (!is_array($competition)) {
+                continue;
+            }
+            $league = is_array($json['header']['league'] ?? null) ? $json['header']['league'] : [];
+            $leagueSlug = trim((string) ($league['slug'] ?? ''));
+            if ($leagueSlug === '') {
+                continue;
+            }
+
+            $status = is_array($competition['status'] ?? null) ? $competition['status'] : [];
+            $type = is_array($status['type'] ?? null) ? $status['type'] : [];
+            $state = strtolower((string) ($type['state'] ?? ''));
+            $typeName = strtoupper((string) ($type['name'] ?? ''));
+
+            $phut = 0;
+            if ($state === 'in') {
+                $clock = $status['clock'] ?? null;
+                if (is_numeric($clock)) {
+                    $phut = (int) floor(((int) $clock) / 60);
+                } elseif (preg_match('/^(\d+)/', (string) ($status['displayClock'] ?? ''), $m) === 1) {
+                    $phut = (int) $m[1];
+                }
+            }
+
+            $home = null;
+            $away = null;
+            foreach (($competition['competitors'] ?? []) as $competitor) {
+                if (!is_array($competitor)) {
+                    continue;
+                }
+                $team = is_array($competitor['team'] ?? null) ? $competitor['team'] : [];
+                $teamId = trim((string) ($team['id'] ?? ''));
+                if ($teamId === '') {
+                    continue;
+                }
+                $row = [
+                    'ma' => $teamId,
+                    'ti_so' => (int) ($competitor['score'] ?? 0),
+                ];
+                $side = (string) ($competitor['homeAway'] ?? '');
+                if ($side === 'home') {
+                    $home = $row;
+                } elseif ($side === 'away') {
+                    $away = $row;
+                }
+            }
+            if ($home === null || $away === null) {
+                continue;
+            }
+
+            $bundle['matches'][] = [
+                'ma' => $id,
+                'ma_giai' => $leagueSlug,
+                'ma_doi_nha' => $home['ma'],
+                'ma_doi_khach' => $away['ma'],
+                'thoi_gian_utc' => $this->toUtc((string) ($competition['date'] ?? '')),
+                'trang_thai' => $this->mapStatus($state, $typeName),
+                'phut' => $phut,
+                'ti_so_nha' => $home['ti_so'],
+                'ti_so_khach' => $away['ti_so'],
+                'co_live' => isset($competition['liveAvailable'])
+                    ? (int) (bool) $competition['liveAvailable']
+                    : null,
+            ];
+        }
+
+        return $bundle;
+    }
+
     public function fetchLeagues(): array
     {
         $bundle = $this->rong();
