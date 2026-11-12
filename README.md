@@ -143,53 +143,6 @@ flowchart TD
 
 ---
 
-<a id="demo"></a>
-
-## Demo & Screenshots
-
-### Demo trực tuyến
-
-> **Live Demo:** _Đang cập nhật_ — thay dòng này bằng URL triển khai của bạn, ví dụ: `https://your-domain.com/`.
-
-### Thêm ảnh chụp màn hình
-
-1. Tạo thư mục `docs/screenshots/` ở thư mục gốc dự án.
-2. Đặt ảnh theo gợi ý sau:
-
-```text
-docs/screenshots/
-├── 01-home.png            # Trang chủ / bảng tỉ số
-├── 02-schedule.png        # Lịch thi đấu
-├── 03-match-detail.png    # Chi tiết trận
-├── 04-standings.png       # Bảng xếp hạng
-├── 05-news.png            # Tin tức
-├── 06-products.png        # Sản phẩm bóng đá
-├── 07-calendar.png        # Lịch cá nhân
-└── 08-admin-dashboard.png # Quản trị
-```
-
-3. Chèn ảnh vào README bằng Markdown:
-
-```markdown
-![Trang chủ FastFootBalInfo](docs/screenshots/01-home.png)
-```
-
-4. Hoặc trình bày dạng lưới:
-
-```markdown
-| Trang chủ | Chi tiết trận |
-|---|---|
-| <img src="docs/screenshots/01-home.png" width="420" alt="Trang chủ"> | <img src="docs/screenshots/03-match-detail.png" width="420" alt="Chi tiết trận"> |
-
-| Bảng xếp hạng | Quản trị |
-|---|---|
-| <img src="docs/screenshots/04-standings.png" width="420" alt="Bảng xếp hạng"> | <img src="docs/screenshots/08-admin-dashboard.png" width="420" alt="Quản trị"> |
-```
-
-> `.gitignore` hiện đang bỏ qua thư mục `/docs/`. Nếu muốn commit ảnh, hãy xóa dòng `/docs/` khỏi `.gitignore` hoặc dùng `git add -f docs/screenshots/*.png`.
-
----
-
 <a id="getting-started"></a>
 
 ## Bắt đầu
@@ -719,43 +672,6 @@ C:\xampp\php\php.exe tools\real_sync_check.php
 
 ---
 
-<a id="contributing"></a>
-
-## Đóng góp
-
-Mọi đóng góp về tính năng, giao diện, tài liệu hoặc báo lỗi đều được hoan nghênh.
-
-### Quy trình
-
-1. **Fork** repository.
-2. Tạo nhánh mới từ `main`:
-
-```bash
-git checkout -b feat/ten-tinh-nang
-```
-
-3. Thực hiện thay đổi, sau đó kiểm tra:
-
-```bash
-php tools/check_no_sql.php
-php tools/smoke_test.php
-```
-
-4. Commit theo Conventional Commits:
-
-```bash
-git commit -m "feat(match): them bo loc theo giai dau"
-git commit -m "fix(calendar): sua loi nhac tran"
-git commit -m "docs(readme): cap nhat huong dan cai dat"
-```
-
-5. Push nhánh và mở **Pull Request** mô tả rõ:
-
-- Vấn đề cần giải quyết.
-- Cách tiếp cận.
-- Các bước kiểm thử đã chạy.
-- Ảnh chụp màn hình nếu thay đổi giao diện.
-
 ### Quy tắc mã nguồn
 
 | Quy tắc | Yêu cầu |
@@ -767,27 +683,6 @@ git commit -m "docs(readme): cap nhat huong dan cai dat"
 | CSDL | Thay đổi schema phải kèm migration trong `database/migrations/` |
 | Cấu hình | Không commit `config.ini`, khóa bí mật hoặc dump dữ liệu thật |
 | Ngôn ngữ | Giữ naming nhất quán với codebase hiện tại (tiếng Việt không dấu cho định danh) |
-
-### Báo lỗi
-
-Khi mở issue, vui lòng cung cấp:
-
-- Môi trường (PHP, MySQL/MariaDB, trình duyệt).
-- Các bước tái hiện.
-- Log lỗi hoặc ảnh chụp màn hình.
-- Kết quả mong đợi và kết quả thực tế.
-
----
-
-<a id="license"></a>
-
-## Giấy phép
-
-Dự án hiện **chưa có tệp `LICENSE` chính thức**. Mã nguồn được công bố chủ yếu cho mục đích học tập, tham khảo và nghiên cứu trong khuôn khổ đồ án học phần.
-
-- Không mặc định cấp quyền sử dụng cho mục đích thương mại.
-- Vui lòng liên hệ tác giả nếu muốn tái sử dụng, phân phối hoặc phát triển thương mại.
-- Nếu muốn chuyển dự án sang giấy phép mã nguồn mở, khuyến nghị thêm `LICENSE` với **MIT** hoặc **Apache-2.0** và cập nhật badge ở đầu README.
 
 ---
 
@@ -804,11 +699,13 @@ Dự án hiện **chưa có tệp `LICENSE` chính thức**. Mã nguồn đượ
 > Các thương hiệu, logo, tên giải đấu, tên đội bóng và hình ảnh thuộc về chủ sở hữu tương ứng. Dự án chỉ sử dụng cho mục đích học tập và không đại diện cho các tổ chức, giải đấu hoặc nền tảng dữ liệu nêu trên.
 
 ---
+## Thành viên nhóm
 
-<div align="center">
-
-**FastFootBalInfo** · Được xây dựng với  và PHP
-
-[Nguồn mã nguồn](https://github.com/Ddawng18/WEB-InfoFootball) · [Báo lỗi](https://github.com/Ddawng18/WEB-InfoFootball/issues) · [Đóng góp](#contributing)
+| STT | Họ và tên | Tên github | MSSV |
+| ---: | --- | --- | --- |
+| 1 | Nguyễn Huỳnh Đăng | Ddawng18 | 31241026574 |
+| 2 | Lê Công Bảo | congbao2006 | 31241027834 |
+| 3 | Bành Phát Thịnh | Phát Thịnh | 31241022944 |
+| 4 | Nguyễn Lâm Sỹ Phú | Phunguyen11-02 | 31241020835 |
 
 </div>
